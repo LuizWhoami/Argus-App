@@ -1,0 +1,14 @@
+program:
+  name: redscan
+  allowed:
+  - '*.example.com'
+  - example.com
+  - api.tes.org
+  - api.test.com
+  - '*.test.com'
+  excluded:
+  - admin.example.com
+  - staging.example.com
+  max_rps: 10
+  aggressive_scanning: true
+  destructive_testing: true
