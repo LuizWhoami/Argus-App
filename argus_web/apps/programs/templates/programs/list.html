@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Programas — Argus{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h3 m-0">Programas</h1>
+  <a class="btn btn-primary" href="{% url 'programs:create' %}">Novo programa</a>
+</div>
+
+{% if programs %}
+  <div class="row g-3">
+    {% for p in programs %}
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-body">
+            <h5 class="card-title">{{ p.name }}</h5>
+            <p class="card-text text-muted small">{{ p.description|default:""|truncatechars:120 }}</p>
+            <ul class="list-unstyled small mb-2">
+              <li>Escopo permitido: <strong>{{ p.allowed_patterns|length }}</strong></li>
+              <li>Exclusoes: <strong>{{ p.excluded_patterns|length }}</strong></li>
+              <li>Max RPS: {{ p.max_rps }}</li>
+            </ul>
+          </div>
+          <div class="card-footer bg-transparent">
+            <a class="btn btn-sm btn-outline-primary"
+               href="{% url 'programs:detail' p.slug %}">Abrir</a>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="text-center text-muted py-5 border rounded">
+    <p class="mb-2">Nenhum programa ainda.</p>
+    <a class="btn btn-outline-primary"
+       href="{% url 'programs:create' %}">Criar o primeiro</a>
+  </div>
+{% endif %}
+{% endblock %}

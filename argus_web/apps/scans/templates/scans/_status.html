@@ -1,0 +1,86 @@
+<div class="row g-3 mb-3">
+  <div class="col-md-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="text-muted small">Status</div>
+        <div class="fs-5">
+          {% if scan.status == "completed" %}<span class="badge bg-success">completed</span>
+          {% elif scan.status == "running" %}<span class="badge bg-primary">running</span>
+          {% elif scan.status == "queued" %}<span class="badge bg-secondary">queued</span>
+          {% elif scan.status == "failed" %}<span class="badge bg-danger">failed</span>
+          {% else %}<span class="badge bg-warning text-dark">{{ scan.status }}</span>{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card"><div class="card-body">
+      <div class="text-muted small">Assets</div>
+      <div class="fs-5">{{ scan.assets_found }}</div>
+    </div></div>
+  </div>
+  <div class="col-md-3">
+    <div class="card"><div class="card-body">
+      <div class="text-muted small">Endpoints</div>
+      <div class="fs-5">{{ scan.endpoints_found }}</div>
+    </div></div>
+  </div>
+  <div class="col-md-3">
+    <div class="card"><div class="card-body">
+      <div class="text-muted small">API endpoints</div>
+      <div class="fs-5">{{ scan.api_endpoints_found }}</div>
+    </div></div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-5">
+    <div class="card">
+      <div class="card-header">Etapas</div>
+      <ul class="list-group list-group-flush">
+        {% for st in stages %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>
+              <strong>{{ st.name }}</strong>
+              <span class="text-muted small">— {{ st.result_count }}</span>
+            </span>
+            <span class="badge
+              {% if st.status == "completed" %}bg-success
+              {% elif st.status == "running" %}bg-primary
+              {% elif st.status == "failed" %}bg-danger
+              {% else %}bg-secondary{% endif %}">{{ st.status }}</span>
+          </li>
+        {% empty %}
+          <li class="list-group-item text-muted small">Nenhuma etapa ainda.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="col-md-7">
+    <div class="card">
+      <div class="card-header">Eventos</div>
+      <div style="max-height: 26rem; overflow-y: auto;">
+        <ul class="list-group list-group-flush">
+          {% for ev in events %}
+            <li class="list-group-item small">
+              <span class="text-muted">{{ ev.ts|date:"H:i:s" }}</span>
+              {% if ev.level == "error" %}<span class="badge bg-danger">err</span>
+              {% elif ev.level == "warn" %}<span class="badge bg-warning text-dark">warn</span>
+              {% endif %}
+              {% if ev.stage %}<span class="text-primary">[{{ ev.stage }}]</span>{% endif %}
+              {{ ev.message }}
+            </li>
+          {% empty %}
+            <li class="list-group-item text-muted small">Nada ainda.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if scan.error_message %}
+  <div class="alert alert-danger mt-3">
+    <strong>Erro:</strong> {{ scan.error_message }}
+  </div>
+{% endif %}

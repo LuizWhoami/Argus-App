@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Novo scan — {{ program.name }}{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-4">Novo scan — {{ program.name }}</h1>
+
+<div class="row">
+  <div class="col-md-8">
+    <form method="post">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label">Alvo (hostname)</label>
+        <input name="target" class="form-control" required
+               placeholder="ex: api.example.com">
+        <small class="text-muted">
+          Precisa estar dentro do escopo do programa.
+        </small>
+      </div>
+      <div class="mb-3">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox"
+                 name="api_scan" checked id="api_scan">
+          <label class="form-check-label" for="api_scan">API discovery</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox"
+                 name="crawl" checked id="crawl">
+          <label class="form-check-label" for="crawl">Crawling (katana)</label>
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Crawl depth</label>
+        <input name="crawl_depth" type="number" min="1" max="10"
+               value="3" class="form-control" style="width: 8rem;">
+      </div>
+      <button class="btn btn-primary">Iniciar scan</button>
+      <a class="btn btn-outline-secondary"
+         href="{% url 'programs:detail' program.slug %}">Cancelar</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

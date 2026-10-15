@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Scans — Argus{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h3 m-0">Scans</h1>
+</div>
+
+{% if scans %}
+<table class="table table-hover align-middle">
+  <thead>
+    <tr>
+      <th>#</th><th>Alvo</th><th>Programa</th><th>Status</th>
+      <th>Assets</th><th>Criado</th><th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for s in scans %}
+    <tr>
+      <td>{{ s.pk }}</td>
+      <td><code class="mono">{{ s.target }}</code></td>
+      <td>{{ s.program.name }}</td>
+      <td>
+        {% if s.status == "completed" %}<span class="badge bg-success">{{ s.status }}</span>
+        {% elif s.status == "running" %}<span class="badge bg-primary">{{ s.status }}</span>
+        {% elif s.status == "queued" %}<span class="badge bg-secondary">{{ s.status }}</span>
+        {% elif s.status == "failed" %}<span class="badge bg-danger">{{ s.status }}</span>
+        {% else %}<span class="badge bg-warning text-dark">{{ s.status }}</span>{% endif %}
+      </td>
+      <td>{{ s.assets_found }}</td>
+      <td class="small text-muted">{{ s.created_at|date:"Y-m-d H:i" }}</td>
+      <td><a class="btn btn-sm btn-outline-primary"
+             href="{% url 'scans:detail' s.pk %}">Abrir</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="text-center text-muted py-5 border rounded">
+  <p class="mb-2">Nenhum scan ainda.</p>
+  <p class="small">Abra um programa e clique em "Novo scan".</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Scan #{{ scan.pk }} — Argus{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-4">
+  <div>
+    <h1 class="h3 m-0">Scan #{{ scan.pk }}</h1>
+    <div class="text-muted small">
+      <code class="mono">{{ scan.target }}</code> ·
+      {{ scan.program.name }} ·
+      criado {{ scan.created_at|date:"Y-m-d H:i:s" }}
+    </div>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-sm btn-outline-secondary"
+       href="{% url 'scans:list' %}">Voltar</a>
+    {% if not scan.is_terminal %}
+      <form method="post" action="{% url 'scans:cancel' scan.pk %}">
+        {% csrf_token %}
+        <button class="btn btn-sm btn-outline-danger">Cancelar</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+<div id="scan-status"
+     hx-get="{% url 'scans:status' scan.pk %}"
+     hx-trigger="every 2s"
+     hx-swap="innerHTML">
+  {% include "scans/_status.html" %}
+</div>
+{% endblock %}

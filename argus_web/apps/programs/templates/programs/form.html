@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{% if program %}Editar{% else %}Novo{% endif %} programa — Argus{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-4">
+  {% if program %}Editar "{{ program.name }}"{% else %}Novo programa{% endif %}
+</h1>
+
+<form method="post" class="row g-3">
+  {% csrf_token %}
+  <div class="col-md-8">
+    <label class="form-label">Nome</label>
+    <input name="name" class="form-control" required
+           value="{{ program.name|default:'' }}">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Max RPS</label>
+    <input name="max_rps" type="number" min="1" max="100" class="form-control"
+           value="{{ program.max_rps|default:5 }}">
+  </div>
+  <div class="col-12">
+    <label class="form-label">Descricao</label>
+    <textarea name="description" rows="3"
+              class="form-control">{{ program.description|default:'' }}</textarea>
+  </div>
+  {% if program %}
+    <div class="col-12">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox"
+               name="aggressive_scanning" id="aggressive"
+               {% if program.aggressive_scanning %}checked{% endif %}>
+        <label class="form-check-label" for="aggressive">
+          Permitir scanning agressivo
+        </label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox"
+               name="destructive_testing" id="destructive"
+               {% if program.destructive_testing %}checked{% endif %}>
+        <label class="form-check-label" for="destructive">
+          Permitir testes destrutivos (requer autorizacao escrita)
+        </label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox"
+               name="is_active" id="active"
+               {% if program.is_active %}checked{% endif %}>
+        <label class="form-check-label" for="active">Programa ativo</label>
+      </div>
+    </div>
+  {% endif %}
+  <div class="col-12">
+    <button class="btn btn-primary">
+      {% if program %}Salvar{% else %}Criar{% endif %}
+    </button>
+    <a class="btn btn-outline-secondary"
+       href="{% if program %}{% url 'programs:detail' program.slug %}{% else %}{% url 'programs:list' %}{% endif %}">
+      Cancelar
+    </a>
+  </div>
+</form>
+{% endblock %}
