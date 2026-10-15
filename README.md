@@ -1,6 +1,3 @@
-cd ~/Desktop/PC/projects/Argus-App
-
-cat > README.md << 'EOF'
 # Argus
 
 > Agente autônomo de Bug Bounty — recon, API discovery, crawling e parameter extraction.
