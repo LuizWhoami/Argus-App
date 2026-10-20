@@ -1,7 +1,35 @@
 from django.db import models
 
 
-class Asset(models.Model):
+class VerificationMixin(models.Model):
+    """Campos de curadoria humana. Nao substitui evidencia."""
+    VERIF_DISCOVERED = "discovered"
+    VERIF_INTERESTING = "interesting"
+    VERIF_VERIFIED = "verified"
+    VERIF_FALSE_POSITIVE = "false_positive"
+    VERIF_CHOICES = [
+        (VERIF_DISCOVERED, "Descoberto"),
+        (VERIF_INTERESTING, "Interessante"),
+        (VERIF_VERIFIED, "Verificado"),
+        (VERIF_FALSE_POSITIVE, "Falso positivo"),
+    ]
+
+    verification = models.CharField(
+        max_length=20, choices=VERIF_CHOICES,
+        default=VERIF_DISCOVERED, db_index=True,
+    )
+    verification_note = models.TextField(blank=True)
+    verified_by = models.ForeignKey(
+        "auth.User", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="+",
+    )
+    verified_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        abstract = True
+
+
+class Asset(VerificationMixin):
     """Hostname descoberto dentro de um programa."""
     program = models.ForeignKey(
         "programs.Program",
@@ -34,7 +62,7 @@ class DNSRecord(models.Model):
     asset = models.ForeignKey(
         Asset, on_delete=models.CASCADE, related_name="dns_records",
     )
-    record_type = models.CharField(max_length=10)   # A, AAAA, CNAME, MX...
+    record_type = models.CharField(max_length=10)
     value = models.CharField(max_length=512)
 
     class Meta:
@@ -49,7 +77,7 @@ class DNSRecord(models.Model):
         return f"{self.record_type} {self.value}"
 
 
-class HTTPProbe(models.Model):
+class HTTPProbe(VerificationMixin):
     asset = models.ForeignKey(
         Asset, on_delete=models.CASCADE, related_name="http_probes",
     )
@@ -58,7 +86,7 @@ class HTTPProbe(models.Model):
     title = models.CharField(max_length=512, blank=True)
     content_type = models.CharField(max_length=255, blank=True)
     webserver = models.CharField(max_length=255, blank=True)
-    tech = models.TextField(blank=True)     # CSV de tecnologias
+    tech = models.TextField(blank=True)
     location = models.CharField(max_length=2048, blank=True)
     probed_at = models.DateTimeField(auto_now_add=True)
 
@@ -77,7 +105,7 @@ class HTTPProbe(models.Model):
         return f"{self.status_code} {self.url}"
 
 
-class Endpoint(models.Model):
+class Endpoint(VerificationMixin):
     """URL/rota descoberta via crawling ou path guessing."""
     SOURCE_KATANA = "katana"
     SOURCE_WORDLIST = "wordlist"
@@ -128,7 +156,7 @@ class Endpoint(models.Model):
         return f"{self.method} {self.url}"
 
 
-class Parameter(models.Model):
+class Parameter(VerificationMixin):
     LOC_QUERY = "query"
     LOC_FORM = "form"
     LOC_CHOICES = [

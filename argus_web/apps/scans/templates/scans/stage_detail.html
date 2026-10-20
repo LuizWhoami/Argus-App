@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}{{ stage_label }} — Scan #{{ scan.pk }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-4">
+  <div>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-1">
+        <li class="breadcrumb-item"><a href="{% url 'scans:list' %}">Scans</a></li>
+        <li class="breadcrumb-item">
+          <a href="{% url 'scans:detail' scan.pk %}">#{{ scan.pk }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ stage_label }}</li>
+      </ol>
+    </nav>
+    <h1 class="h3 m-0">{{ stage_label }}
+      <span class="badge bg-secondary fs-6">{{ total_count }}</span>
+    </h1>
+    <div class="text-muted small">
+      <code class="mono">{{ scan.target }}</code> ·
+      {{ scan.program.name }}
+      {% if stage_obj %}
+        · status <span class="badge
+          {% if stage_obj.status == "completed" %}bg-success
+          {% elif stage_obj.status == "running" %}bg-primary
+          {% elif stage_obj.status == "failed" %}bg-danger
+          {% else %}bg-secondary{% endif %}">{{ stage_obj.status }}</span>
+      {% else %}
+        · <span class="badge bg-secondary">nao executada</span>
+      {% endif %}
+    </div>
+  </div>
+  <a class="btn btn-sm btn-outline-secondary"
+     href="{% url 'scans:detail' scan.pk %}">Voltar ao scan</a>
+</div>
+
+{% if not has_links %}
+<div class="alert alert-info py-2 small">
+  <strong>Nota:</strong> este scan nao tem vinculos explicitos ainda
+  (rodou antes da feature de ligacao). Mostrando
+  <em>{{ source_label }}</em>. Rode um scan novo para ver apenas
+  o que ele descobriu.
+</div>
+{% endif %}
+
+{% if stage_obj %}
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card"><div class="card-body">
+      <div class="text-muted small">Itens nesta etapa</div>
+      <div class="fs-4">{{ stage_obj.result_count }}</div>
+    </div></div>
+  </div>
+  <div class="col-md-3">
+    <div class="card"><div class="card-body">
+      <div class="text-muted small">Iniciada</div>
+      <div class="small">{{ stage_obj.started_at|date:"H:i:s"|default:"—" }}</div>
+    </div></div>
+  </div>
+  <div class="col-md-3">
+    <div class="card"><div class="card-body">
+      <div class="text-muted small">Concluida</div>
+      <div class="small">{{ stage_obj.finished_at|date:"H:i:s"|default:"—" }}</div>
+    </div></div>
+  </div>
+  <div class="col-md-3">
+    <div class="card"><div class="card-body">
+      <div class="text-muted small">Mensagem</div>
+      <div class="small text-truncate" title="{{ stage_obj.message }}">
+        {{ stage_obj.message|default:"—" }}
+      </div>
+    </div></div>
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle m-0">
+      <thead>
+        {% if kind_of_rows == "events" %}
+          <tr><th>Hora</th><th>Nivel</th><th>Mensagem</th></tr>
+        {% elif kind_of_rows == "assets" %}
+          <tr><th>Hostname</th><th>IP</th><th>Alive</th><th>Verificacao</th></tr>
+        {% elif kind_of_rows == "probes" %}
+          <tr><th>URL</th><th>Status</th><th>Content-Type</th><th>Title</th><th>Tech</th></tr>
+        {% elif kind_of_rows == "endpoints" %}
+          <tr><th>URL</th><th>Method</th><th>Status</th><th>Kind</th><th>Source</th></tr>
+        {% elif kind_of_rows == "params" %}
+          <tr><th>Param</th><th>Local</th><th>Endpoint</th><th>Verificacao</th></tr>
+        {% endif %}
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          {% if kind_of_rows == "events" %}
+            <td class="small text-muted">{{ r.ts|date:"H:i:s" }}</td>
+            <td>
+              {% if r.level == "error" %}<span class="badge bg-danger">err</span>
+              {% elif r.level == "warn" %}<span class="badge bg-warning text-dark">warn</span>
+              {% else %}<span class="badge bg-secondary">info</span>{% endif %}
+            </td>
+            <td class="small">{{ r.message }}</td>
+
+          {% elif kind_of_rows == "assets" %}
+            <td><code class="mono">{{ r.hostname }}</code></td>
+            <td>{{ r.ip|default:"—" }}</td>
+            <td>{% if r.is_alive %}<span class="badge bg-success">up</span>{% else %}—{% endif %}</td>
+            <td><span class="badge
+              {% if r.verification == "verified" %}bg-success
+              {% elif r.verification == "interesting" %}bg-primary
+              {% elif r.verification == "false_positive" %}bg-danger
+              {% else %}bg-secondary{% endif %}">{{ r.verification }}</span></td>
+
+          {% elif kind_of_rows == "probes" %}
+            <td><code class="mono small">{{ r.url|truncatechars:80 }}</code></td>
+            <td>{{ r.status_code|default:"—" }}</td>
+            <td class="small text-muted">{{ r.content_type|default:"—" }}</td>
+            <td class="small">{{ r.title|default:"—"|truncatechars:50 }}</td>
+            <td class="small text-muted">{{ r.tech|default:"—"|truncatechars:40 }}</td>
+
+          {% elif kind_of_rows == "endpoints" %}
+            <td><code class="mono small">{{ r.url|truncatechars:90 }}</code></td>
+            <td>{{ r.method }}</td>
+            <td>{{ r.status_code|default:"—" }}</td>
+            <td>{% if r.kind %}<span class="badge bg-info">{{ r.kind }}</span>{% else %}—{% endif %}</td>
+            <td class="small text-muted">{{ r.source }}</td>
+
+          {% elif kind_of_rows == "params" %}
+            <td><code class="mono">{{ r.name }}</code></td>
+            <td><span class="badge bg-secondary">{{ r.location }}</span></td>
+            <td><code class="mono small">{{ r.endpoint.url|truncatechars:70 }}</code></td>
+            <td><span class="badge
+              {% if r.verification == "verified" %}bg-success
+              {% elif r.verification == "interesting" %}bg-primary
+              {% elif r.verification == "false_positive" %}bg-danger
+              {% else %}bg-secondary{% endif %}">{{ r.verification }}</span></td>
+          {% endif %}
+        </tr>
+        {% empty %}
+          <tr><td colspan="8" class="text-center text-muted py-4">
+            Nenhum resultado nesta etapa.
+            <br>
+            <span class="small">
+              Se o scan rodou, verifique se as ferramentas estao no PATH
+              e se o alvo tem dados nessa etapa.
+            </span>
+          </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

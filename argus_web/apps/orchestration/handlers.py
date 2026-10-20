@@ -1,8 +1,4 @@
-"""Consome eventos do pipeline_events e grava nos models do Django.
-
-Regra: este modulo NAO fala com ferramentas externas. Ele so escreve
-no banco. Toda decisao de escopo ja foi tomada em iter_scan_events.
-"""
+"""Consome eventos do pipeline e grava nos models do Django."""
 import logging
 from urllib.parse import urlparse
 
@@ -12,13 +8,16 @@ from django.utils import timezone
 from apps.assets.models import (
     Asset, DNSRecord, Endpoint, HTTPProbe, Parameter,
 )
-from apps.scans.models import Scan, ScanEvent, ScanStage
+from apps.scans.models import (
+    Scan, ScanAsset, ScanEndpoint, ScanParameter,
+    ScanEvent, ScanStage,
+)
 
 log = logging.getLogger(__name__)
 
 STAGE_ORDER = {
     "scope": 1, "subdomains": 2, "dns": 3, "http": 4,
-    "crawl": 5, "api": 6, "params": 7,
+    "crawl": 5, "api": 6, "vulns": 7, "params": 8,
 }
 
 
@@ -29,21 +28,26 @@ def _host_of(url: str) -> str:
         return ""
 
 
-def _get_or_create_asset(scan: Scan, hostname: str, ip=None) -> Asset:
-    asset, created = Asset.objects.get_or_create(
-        program=scan.program,
-        hostname=hostname,
-        defaults={"ip": ip},
+def _link_asset(scan, asset, is_new=False):
+    ScanAsset.objects.get_or_create(
+        scan=scan, asset=asset, defaults={"is_new": is_new},
     )
-    if ip and not asset.ip:
-        asset.ip = ip
-        asset.save(update_fields=["ip"])
-    return asset
+
+
+def _link_endpoint(scan, endpoint, is_new=False):
+    ScanEndpoint.objects.get_or_create(
+        scan=scan, endpoint=endpoint, defaults={"is_new": is_new},
+    )
+
+
+def _link_parameter(scan, parameter, is_new=False):
+    ScanParameter.objects.get_or_create(
+        scan=scan, parameter=parameter, defaults={"is_new": is_new},
+    )
 
 
 @transaction.atomic
 def handle_event(scan: Scan, event: dict) -> None:
-    """Aplica um evento ao banco. Idempotente por constraint."""
     kind = event.get("event")
 
     if kind == "scan.started":
@@ -54,14 +58,12 @@ def handle_event(scan: Scan, event: dict) -> None:
         ScanStage.objects.update_or_create(
             scan=scan, name=event["stage"],
             defaults={
-                "order": event.get("order", STAGE_ORDER.get(event["stage"], 99)),
+                "order": event.get("order",
+                                   STAGE_ORDER.get(event["stage"], 99)),
                 "status": ScanStage.STATUS_RUNNING,
                 "started_at": timezone.now(),
             },
         )
-        ScanEvent.objects.create(scan=scan, level="info",
-                                 stage=event["stage"],
-                                 message=f"etapa {event['stage']} iniciada")
 
     elif kind == "stage.completed":
         ScanStage.objects.update_or_create(
@@ -73,10 +75,6 @@ def handle_event(scan: Scan, event: dict) -> None:
                 "finished_at": timezone.now(),
             },
         )
-        ScanEvent.objects.create(scan=scan, level="info",
-                                 stage=event["stage"],
-                                 message=f"etapa {event['stage']} concluida "
-                                         f"({event.get('count', 0)} itens)")
 
     elif kind == "stage.failed":
         ScanStage.objects.update_or_create(
@@ -93,10 +91,21 @@ def handle_event(scan: Scan, event: dict) -> None:
                                  message=str(event.get("error", ""))[:1000])
 
     elif kind == "asset.found":
-        _get_or_create_asset(scan, event["hostname"], event.get("ip"))
+        asset, created = Asset.objects.get_or_create(
+            program=scan.program,
+            hostname=event["hostname"],
+            defaults={"ip": event.get("ip")},
+        )
+        if event.get("ip") and not asset.ip:
+            asset.ip = event["ip"]
+            asset.save(update_fields=["ip"])
+        _link_asset(scan, asset, is_new=created)
 
     elif kind == "dns.record":
-        asset = _get_or_create_asset(scan, event["hostname"])
+        asset, created = Asset.objects.get_or_create(
+            program=scan.program, hostname=event["hostname"],
+        )
+        _link_asset(scan, asset, is_new=created)
         DNSRecord.objects.get_or_create(
             asset=asset,
             record_type=event["record_type"],
@@ -104,7 +113,10 @@ def handle_event(scan: Scan, event: dict) -> None:
         )
 
     elif kind == "http.probe":
-        asset = _get_or_create_asset(scan, event["hostname"])
+        asset, a_created = Asset.objects.get_or_create(
+            program=scan.program, hostname=event["hostname"],
+        )
+        _link_asset(scan, asset, is_new=a_created)
         HTTPProbe.objects.update_or_create(
             asset=asset, url=event["url"],
             defaults={
@@ -120,8 +132,11 @@ def handle_event(scan: Scan, event: dict) -> None:
         asset.save(update_fields=["is_alive"])
 
     elif kind == "endpoint.found":
-        asset = _get_or_create_asset(scan, event["hostname"])
-        Endpoint.objects.get_or_create(
+        asset, a_created = Asset.objects.get_or_create(
+            program=scan.program, hostname=event["hostname"],
+        )
+        _link_asset(scan, asset, is_new=a_created)
+        endpoint, e_created = Endpoint.objects.get_or_create(
             asset=asset, url=event["url"],
             method=event.get("method", "GET"),
             defaults={
@@ -130,27 +145,33 @@ def handle_event(scan: Scan, event: dict) -> None:
                 "source": event.get("source", Endpoint.SOURCE_KATANA),
             },
         )
+        _link_endpoint(scan, endpoint, is_new=e_created)
 
     elif kind == "api.found":
-        asset = _get_or_create_asset(scan, event["hostname"])
-        Endpoint.objects.update_or_create(
+        asset, a_created = Asset.objects.get_or_create(
+            program=scan.program, hostname=event["hostname"],
+        )
+        _link_asset(scan, asset, is_new=a_created)
+        endpoint, e_created = Endpoint.objects.update_or_create(
             asset=asset, url=event["url"], method="GET",
             defaults={
                 "kind": event["kind"],
                 "source": event.get("source", Endpoint.SOURCE_WORDLIST),
             },
         )
+        _link_endpoint(scan, endpoint, is_new=e_created)
 
     elif kind == "param.found":
-        ep = (Endpoint.objects
-              .filter(asset__program=scan.program, url=event["endpoint_url"])
-              .first())
+        ep = Endpoint.objects.filter(
+            asset__program=scan.program,
+            url=event["endpoint_url"],
+        ).first()
         if ep:
-            Parameter.objects.get_or_create(
-                endpoint=ep,
-                name=event["name"],
+            param, p_created = Parameter.objects.get_or_create(
+                endpoint=ep, name=event["name"],
                 location=event["location"],
             )
+            _link_parameter(scan, param, is_new=p_created)
 
     elif kind == "scan.completed":
         s = event.get("summary", {})

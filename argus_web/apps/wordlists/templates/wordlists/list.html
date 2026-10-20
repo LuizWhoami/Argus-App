@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Wordlists — Argus{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h3 m-0">Wordlists</h1>
+  <a class="btn btn-primary" href="{% url 'wordlists:new' %}">
+    Nova wordlist
+  </a>
+</div>
+
+<form method="get" class="mb-3">
+  <select name="kind" class="form-select form-select-sm"
+          style="width: 20rem; display: inline-block;"
+          onchange="this.form.submit()">
+    <option value="">— todos os tipos —</option>
+    {% for v, label in kinds %}
+      <option value="{{ v }}" {% if current_kind == v %}selected{% endif %}>
+        {{ label }}
+      </option>
+    {% endfor %}
+  </select>
+</form>
+
+{% if rows %}
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle m-0">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Tipo</th>
+          <th>Linhas</th>
+          <th>Origem</th>
+          <th>Atualizada</th>
+          <th style="width: 1%;">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for w in rows %}
+        <tr>
+          <td>
+            <a href="{% url 'wordlists:preview' w.pk %}">
+              {{ w.name }}
+            </a>
+            {% if w.description %}
+              <div class="small text-muted">{{ w.description|truncatechars:80 }}</div>
+            {% endif %}
+          </td>
+          <td><span class="badge bg-secondary">{{ w.kind }}</span></td>
+          <td>{{ w._lines }}</td>
+          <td>
+            {% if w.is_builtin %}
+              <span class="badge bg-info">embutida</span>
+            {% else %}
+              <span class="badge bg-light text-dark">minha</span>
+            {% endif %}
+          </td>
+          <td class="small text-muted">{{ w.updated_at|date:"Y-m-d H:i" }}</td>
+          <td>
+            <div class="d-flex gap-1">
+              <a class="btn btn-sm btn-outline-secondary"
+                 href="{% url 'wordlists:download' w.pk %}">baixar</a>
+              {% if not w.is_builtin %}
+                <a class="btn btn-sm btn-outline-primary"
+                   href="{% url 'wordlists:edit' w.pk %}">editar</a>
+                <form method="post"
+                      action="{% url 'wordlists:delete' w.pk %}"
+                      class="m-0"
+                      onsubmit="return confirm('Excluir {{ w.name }}?');">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-outline-danger">excluir</button>
+                </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="text-center text-muted py-5 border rounded">
+  <p class="mb-2">Nenhuma wordlist.</p>
+  <a class="btn btn-outline-primary" href="{% url 'wordlists:new' %}">
+    Criar a primeira
+  </a>
+</div>
+{% endif %}
+{% endblock %}

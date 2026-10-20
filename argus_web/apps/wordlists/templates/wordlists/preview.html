@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ w.name }} — Wordlist{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb mb-1">
+    <li class="breadcrumb-item"><a href="{% url 'wordlists:list' %}">Wordlists</a></li>
+    <li class="breadcrumb-item active">{{ w.name }}</li>
+  </ol>
+</nav>
+
+<h1 class="h3 mb-2">{{ w.name }}
+  <span class="badge bg-secondary">{{ w.kind }}</span>
+  {% if w.is_builtin %}<span class="badge bg-info">embutida</span>{% endif %}
+</h1>
+
+{% if w.description %}
+  <p class="text-muted">{{ w.description }}</p>
+{% endif %}
+
+<div class="d-flex gap-2 mb-3">
+  <a class="btn btn-sm btn-outline-secondary"
+     href="{% url 'wordlists:download' w.pk %}">Baixar .txt</a>
+  {% if not w.is_builtin %}
+    <a class="btn btn-sm btn-outline-primary"
+       href="{% url 'wordlists:edit' w.pk %}">Editar</a>
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="card-header">
+    {{ total }} linhas
+    {% if total > lines|length %}
+      — mostrando as primeiras {{ lines|length }}
+    {% endif %}
+  </div>
+  <pre class="m-0 p-3" style="max-height: 32rem; overflow-y: auto;">{% for l in lines %}{{ l }}
+{% endfor %}</pre>
+</div>
+{% endblock %}

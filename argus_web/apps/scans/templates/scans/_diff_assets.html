@@ -1,0 +1,68 @@
+{% if entries.added %}
+  <h6 class="text-success">Novos ({{ entries.added|length }})</h6>
+  <ul class="list-group list-group-flush mb-3">
+    {% for a in entries.added %}
+      <li class="list-group-item d-flex justify-content-between">
+        <span><code class="mono">{{ a.hostname }}</code>
+          <span class="text-muted small">— {{ a.ip|default:"sem IP" }}</span>
+        </span>
+        <span class="badge bg-success">novo</span>
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+{% if entries.changed %}
+  <h6 class="text-warning">Alterados ({{ entries.changed|length }})</h6>
+  <ul class="list-group list-group-flush mb-3">
+    {% for c in entries.changed %}
+      <li class="list-group-item">
+        <div class="d-flex justify-content-between">
+          <code class="mono">{{ c.obj.hostname }}</code>
+          <span class="badge bg-warning text-dark">alterado</span>
+        </div>
+        <ul class="small mb-0 mt-1">
+          {% for ch in c.changes %}
+            <li><strong>{{ ch.label }}:</strong>
+              <code class="mono text-danger">{{ ch.old }}</code>
+              →
+              <code class="mono text-success">{{ ch.new }}</code>
+            </li>
+          {% endfor %}
+        </ul>
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+{% if entries.removed %}
+  <h6 class="text-danger">Removidos ({{ entries.removed|length }})</h6>
+  <ul class="list-group list-group-flush mb-3">
+    {% for a in entries.removed %}
+      <li class="list-group-item d-flex justify-content-between">
+        <span><code class="mono">{{ a.hostname }}</code></span>
+        <span class="badge bg-danger">removido</span>
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+{% if entries.unchanged %}
+  <h6 class="text-muted">Inalterados ({{ entries.unchanged|length }})</h6>
+  <ul class="list-group list-group-flush">
+    {% for a in entries.unchanged|slice:":20" %}
+      <li class="list-group-item small text-muted">
+        <code class="mono">{{ a.hostname }}</code>
+      </li>
+    {% endfor %}
+    {% if entries.unchanged|length > 20 %}
+      <li class="list-group-item small text-muted">
+        +{{ entries.unchanged|length|add:"-20" }} mais...
+      </li>
+    {% endif %}
+  </ul>
+{% endif %}
+
+{% if not entries.added and not entries.changed and not entries.removed and not entries.unchanged %}
+  <p class="text-muted small m-0">Nada nesta categoria.</p>
+{% endif %}

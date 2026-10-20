@@ -25,6 +25,8 @@ INSTALLED_APPS = [
     "apps.assets",
     "apps.scans",
     "apps.orchestration",
+    "apps.results",
+    "apps.wordlists",
 ]
 
 MIDDLEWARE = [

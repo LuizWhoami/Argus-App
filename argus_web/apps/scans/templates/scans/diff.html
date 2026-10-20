@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Diff scan #{{ scan.pk }} — Argus{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-4">
+  <div>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-1">
+        <li class="breadcrumb-item"><a href="{% url 'scans:list' %}">Scans</a></li>
+        <li class="breadcrumb-item">
+          <a href="{% url 'scans:detail' scan.pk %}">#{{ scan.pk }}</a>
+        </li>
+        <li class="breadcrumb-item active">Diff</li>
+      </ol>
+    </nav>
+    <h1 class="h3 m-0">Diff de <code class="mono">{{ scan.target }}</code></h1>
+    <div class="text-muted small">
+      {{ scan.program.name }} ·
+      {% if diff.has_previous %}
+        comparando com scan
+        <a href="{% url 'scans:detail' diff.previous.pk %}">#{{ diff.previous.pk }}</a>
+        ({{ diff.previous.created_at|date:"Y-m-d H:i" }})
+      {% else %}
+        primeiro scan deste alvo
+      {% endif %}
+    </div>
+  </div>
+  <a class="btn btn-sm btn-outline-secondary"
+     href="{% url 'scans:detail' scan.pk %}">Voltar ao scan</a>
+</div>
+
+{% if not diff.has_previous %}
+  <div class="alert alert-info">
+    Nenhum scan anterior deste alvo. Todos os achados abaixo são
+    considerados <strong>novos</strong>.
+  </div>
+{% endif %}
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card border-success">
+      <div class="card-body">
+        <div class="text-muted small">Novos</div>
+        <div class="fs-3 text-success">
+          {{ diff.assets.added|length|add:diff.endpoints.added|length|add:diff.params.added|length }}
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card border-warning">
+      <div class="card-body">
+        <div class="text-muted small">Alterados</div>
+        <div class="fs-3 text-warning">
+          {{ diff.assets.changed|length|add:diff.endpoints.changed|length|add:diff.params.changed|length }}
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card border-danger">
+      <div class="card-body">
+        <div class="text-muted small">Removidos</div>
+        <div class="fs-3 text-danger">
+          {{ diff.assets.removed|length|add:diff.endpoints.removed|length|add:diff.params.removed|length }}
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="text-muted small">Inalterados</div>
+        <div class="fs-3 text-muted">
+          {{ diff.assets.unchanged|length|add:diff.endpoints.unchanged|length|add:diff.params.unchanged|length }}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ul class="nav nav-tabs" role="tablist">
+  <li class="nav-item"><button class="nav-link active"
+      data-bs-toggle="tab" data-bs-target="#tab-assets"
+      type="button">Assets
+    {% if diff.assets.added %}<span class="badge bg-success">+{{ diff.assets.added|length }}</span>{% endif %}
+    {% if diff.assets.changed %}<span class="badge bg-warning text-dark">~{{ diff.assets.changed|length }}</span>{% endif %}
+    {% if diff.assets.removed %}<span class="badge bg-danger">-{{ diff.assets.removed|length }}</span>{% endif %}
+  </button></li>
+  <li class="nav-item"><button class="nav-link"
+      data-bs-toggle="tab" data-bs-target="#tab-endpoints"
+      type="button">Endpoints
+    {% if diff.endpoints.added %}<span class="badge bg-success">+{{ diff.endpoints.added|length }}</span>{% endif %}
+    {% if diff.endpoints.changed %}<span class="badge bg-warning text-dark">~{{ diff.endpoints.changed|length }}</span>{% endif %}
+    {% if diff.endpoints.removed %}<span class="badge bg-danger">-{{ diff.endpoints.removed|length }}</span>{% endif %}
+  </button></li>
+  <li class="nav-item"><button class="nav-link"
+      data-bs-toggle="tab" data-bs-target="#tab-params"
+      type="button">Params
+    {% if diff.params.added %}<span class="badge bg-success">+{{ diff.params.added|length }}</span>{% endif %}
+    {% if diff.params.changed %}<span class="badge bg-warning text-dark">~{{ diff.params.changed|length }}</span>{% endif %}
+    {% if diff.params.removed %}<span class="badge bg-danger">-{{ diff.params.removed|length }}</span>{% endif %}
+  </button></li>
+</ul>
+
+<div class="tab-content border border-top-0 rounded-bottom p-3 bg-white">
+  <div class="tab-pane fade show active" id="tab-assets">
+    {% include "scans/_diff_assets.html" with entries=diff.assets %}
+  </div>
+  <div class="tab-pane fade" id="tab-endpoints">
+    {% include "scans/_diff_endpoints.html" with entries=diff.endpoints %}
+  </div>
+  <div class="tab-pane fade" id="tab-params">
+    {% include "scans/_diff_params.html" with entries=diff.params %}
+  </div>
+</div>
+{% endblock %}

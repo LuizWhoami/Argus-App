@@ -29,6 +29,21 @@
         </div>
       </div>
       <div class="mb-3">
+        <label class="form-label">Wordlist de API</label>
+        <select name="wordlist" class="form-select">
+          <option value="">— default (wordlists/api_paths.txt) —</option>
+          {% for w in wordlists %}
+            <option value="{{ w.pk }}">
+              {{ w.name }} ({{ w.kind }}{% if w.is_builtin %}, embutida{% endif %})
+            </option>
+          {% endfor %}
+        </select>
+        <small class="text-muted">
+          A wordlist so e usada se "API discovery" estiver marcado.
+        </small>
+      </div>
+
+      <div class="mb-3">
         <label class="form-label">Crawl depth</label>
         <input name="crawl_depth" type="number" min="1" max="10"
                value="3" class="form-control" style="width: 8rem;">

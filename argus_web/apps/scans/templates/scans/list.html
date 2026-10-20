@@ -7,34 +7,94 @@
 </div>
 
 {% if scans %}
-<table class="table table-hover align-middle">
-  <thead>
-    <tr>
-      <th>#</th><th>Alvo</th><th>Programa</th><th>Status</th>
-      <th>Assets</th><th>Criado</th><th></th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for s in scans %}
-    <tr>
-      <td>{{ s.pk }}</td>
-      <td><code class="mono">{{ s.target }}</code></td>
-      <td>{{ s.program.name }}</td>
-      <td>
-        {% if s.status == "completed" %}<span class="badge bg-success">{{ s.status }}</span>
-        {% elif s.status == "running" %}<span class="badge bg-primary">{{ s.status }}</span>
-        {% elif s.status == "queued" %}<span class="badge bg-secondary">{{ s.status }}</span>
-        {% elif s.status == "failed" %}<span class="badge bg-danger">{{ s.status }}</span>
-        {% else %}<span class="badge bg-warning text-dark">{{ s.status }}</span>{% endif %}
-      </td>
-      <td>{{ s.assets_found }}</td>
-      <td class="small text-muted">{{ s.created_at|date:"Y-m-d H:i" }}</td>
-      <td><a class="btn btn-sm btn-outline-primary"
-             href="{% url 'scans:detail' s.pk %}">Abrir</a></td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle m-0">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Alvo</th>
+          <th>Programa</th>
+          <th>Status</th>
+          <th>Revisado</th>
+          <th>Assets</th>
+          <th>Criado</th>
+          <th style="width: 1%;">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in scans %}
+        <tr>
+          <td>{{ s.pk }}</td>
+          <td><code class="mono">{{ s.target }}</code></td>
+          <td>{{ s.program.name }}</td>
+          <td>
+            {% if s.status == "completed" %}<span class="badge bg-success">{{ s.status }}</span>
+            {% elif s.status == "running" %}<span class="badge bg-primary">{{ s.status }}</span>
+            {% elif s.status == "queued" %}<span class="badge bg-secondary">{{ s.status }}</span>
+            {% elif s.status == "failed" %}<span class="badge bg-danger">{{ s.status }}</span>
+            {% else %}<span class="badge bg-warning text-dark">{{ s.status }}</span>{% endif %}
+          </td>
+          <td>
+            {% if s.review %}
+              <span class="badge bg-info" title="Revisado por {{ s.review.reviewed_by.username|default:'?' }} em {{ s.review.reviewed_at|date:'Y-m-d H:i' }}">
+                revisado
+              </span>
+            {% else %}
+              <span class="text-muted small">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {{ s.assets_found }}
+            {% if s.diff_info.has_previous and s.diff_info.new %}
+              <span class="badge bg-success" title="Novos desde o scan anterior">
+                +{{ s.diff_info.new }}
+              </span>
+            {% endif %}
+            {% if s.diff_info.has_previous and s.diff_info.changed %}
+              <span class="badge bg-warning text-dark" title="Alterados desde o scan anterior">
+                ~{{ s.diff_info.changed }}
+              </span>
+            {% endif %}
+            {% if s.diff_info.has_previous and s.diff_info.removed %}
+              <span class="badge bg-danger" title="Removidos desde o scan anterior">
+                -{{ s.diff_info.removed }}
+              </span>
+            {% endif %}
+          </td>
+          <td class="small text-muted">{{ s.created_at|date:"Y-m-d H:i" }}</td>
+          <td>
+            <div class="d-flex gap-1">
+              <a class="btn btn-sm btn-outline-primary"
+                 href="{% url 'scans:detail' s.pk %}">Abrir</a>
+
+              {% if s.is_terminal %}
+                <form method="post" action="{% url 'scans:review' s.pk %}" class="m-0">
+                  {% csrf_token %}
+                  {% if s.review %}
+                    <button class="btn btn-sm btn-outline-secondary"
+                            title="Remover revisão">desmarcar</button>
+                  {% else %}
+                    <button class="btn btn-sm btn-outline-info"
+                            title="Marcar como revisado">revisar</button>
+                  {% endif %}
+                </form>
+
+                <form method="post" action="{% url 'scans:delete' s.pk %}"
+                      class="m-0"
+                      onsubmit="return confirm('Excluir scan #{{ s.pk }} ({{ s.target }})? Esta ação não pode ser desfeita.');">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-outline-danger">excluir</button>
+                </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {% else %}
 <div class="text-center text-muted py-5 border rounded">
   <p class="mb-2">Nenhum scan ainda.</p>

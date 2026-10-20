@@ -36,22 +36,30 @@
 <div class="row g-3">
   <div class="col-md-5">
     <div class="card">
-      <div class="card-header">Etapas</div>
+      <div class="card-header">Etapas
+        <span class="small text-muted">(clique para ver os resultados)</span>
+      </div>
       <ul class="list-group list-group-flush">
         {% for st in stages %}
-          <li class="list-group-item d-flex justify-content-between align-items-center">
+          <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+             href="{% url 'scans:stage' scan.pk st.name %}">
             <span>
               <strong>{{ st.name }}</strong>
-              <span class="text-muted small">— {{ st.result_count }}</span>
+              <span class="text-muted small">— {{ st.result_count }} itens</span>
             </span>
-            <span class="badge
-              {% if st.status == "completed" %}bg-success
-              {% elif st.status == "running" %}bg-primary
-              {% elif st.status == "failed" %}bg-danger
-              {% else %}bg-secondary{% endif %}">{{ st.status }}</span>
-          </li>
+            <span class="d-flex align-items-center gap-2">
+              <span class="badge
+                {% if st.status == "completed" %}bg-success
+                {% elif st.status == "running" %}bg-primary
+                {% elif st.status == "failed" %}bg-danger
+                {% else %}bg-secondary{% endif %}">{{ st.status }}</span>
+              <span class="text-muted">›</span>
+            </span>
+          </a>
         {% empty %}
-          <li class="list-group-item text-muted small">Nenhuma etapa ainda.</li>
+          <li class="list-group-item text-muted small">
+            Nenhuma etapa ainda. Rode um scan ou aguarde alguns segundos.
+          </li>
         {% endfor %}
       </ul>
     </div>

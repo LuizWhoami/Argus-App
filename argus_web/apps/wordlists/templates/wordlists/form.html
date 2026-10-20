@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}{% if obj %}Editar{% else %}Nova{% endif %} wordlist{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-4">
+  {% if obj %}Editar "{{ obj.name }}"{% else %}Nova wordlist{% endif %}
+</h1>
+
+<form method="post" enctype="multipart/form-data" class="row g-3">
+  {% csrf_token %}
+
+  <div class="col-md-8">
+    <label class="form-label">Nome</label>
+    <input name="name" class="form-control" required
+           value="{{ obj.name|default:'' }}"
+           placeholder="ex: paths-api-v2">
+  </div>
+
+  <div class="col-md-4">
+    <label class="form-label">Tipo</label>
+    {% if obj %}
+      <input class="form-control" value="{{ obj.kind }}" disabled>
+      <input type="hidden" name="kind" value="{{ obj.kind }}">
+    {% else %}
+      <select name="kind" class="form-select" required>
+        {% for v, label in kinds %}
+          <option value="{{ v }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    {% endif %}
+  </div>
+
+  <div class="col-12">
+    <label class="form-label">Descricao (opcional)</label>
+    <input name="description" class="form-control"
+           value="{{ obj.description|default:'' }}">
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label">Conteudo (1 por linha)</label>
+    <textarea name="content" rows="10" class="form-control"
+              placeholder="/api/v1&#10;/api/v2&#10;/graphql">{{ obj.content|default:'' }}</textarea>
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label">Ou upload de .txt</label>
+    <input type="file" name="file" accept=".txt" class="form-control">
+    {% if obj and obj.file %}
+      <div class="small text-muted mt-1">
+        Arquivo atual: <code>{{ obj.file.name }}</code>
+      </div>
+    {% endif %}
+    <div class="small text-muted mt-1">
+      Se ambos forem enviados, o conteudo direto tem prioridade.
+    </div>
+  </div>
+
+  <div class="col-12">
+    <button class="btn btn-primary">
+      {% if obj %}Salvar{% else %}Criar{% endif %}
+    </button>
+    <a class="btn btn-outline-secondary"
+       href="{% url 'wordlists:list' %}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

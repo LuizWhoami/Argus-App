@@ -32,6 +32,11 @@ class Scan(models.Model):
     )
 
     # Configuracao efetiva
+    wordlist = models.ForeignKey(
+        "wordlists.Wordlist",
+        on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="scans",
+    )
     api_scan = models.BooleanField(default=True)
     crawl = models.BooleanField(default=True)
     crawl_depth = models.PositiveSmallIntegerField(default=3)
@@ -156,3 +161,96 @@ class ScanEvent(models.Model):
 
     def __str__(self):
         return f"[{self.level}] {self.message[:60]}"
+
+
+    # Snapshot no fim do scan
+    snap_location = models.CharField(max_length=10, blank=True)
+
+class ScanReview(models.Model):
+    """Curadoria humana de um scan: 'eu olhei isso'."""
+    scan = models.OneToOneField(
+        Scan, on_delete=models.CASCADE, related_name="review",
+    )
+    reviewed_by = models.ForeignKey(
+        "auth.User", on_delete=models.SET_NULL, null=True,
+        related_name="scan_reviews",
+    )
+    note = models.TextField(blank=True)
+    reviewed_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"review of scan#{self.scan_id}"
+
+
+class ScanAsset(models.Model):
+    scan = models.ForeignKey(
+        Scan, on_delete=models.CASCADE, related_name="scan_assets",
+    )
+    asset = models.ForeignKey(
+        "assets.Asset", on_delete=models.CASCADE, related_name="scan_links",
+    )
+    is_new = models.BooleanField(default=False)
+    seen_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["scan", "asset"], name="uniq_scan_asset",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["scan", "is_new"]),
+        ]
+
+
+    # Snapshot no fim do scan (para diff)
+    snap_ip = models.GenericIPAddressField(null=True, blank=True)
+    snap_is_alive = models.BooleanField(default=False)
+
+class ScanEndpoint(models.Model):
+    scan = models.ForeignKey(
+        Scan, on_delete=models.CASCADE, related_name="scan_endpoints",
+    )
+    endpoint = models.ForeignKey(
+        "assets.Endpoint", on_delete=models.CASCADE,
+        related_name="scan_links",
+    )
+    is_new = models.BooleanField(default=False)
+    seen_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["scan", "endpoint"], name="uniq_scan_endpoint",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["scan", "is_new"]),
+        ]
+
+
+    # Snapshot no fim do scan
+    snap_status_code = models.IntegerField(null=True, blank=True)
+    snap_content_type = models.CharField(max_length=255, blank=True)
+    snap_kind = models.CharField(max_length=20, blank=True)
+
+class ScanParameter(models.Model):
+    scan = models.ForeignKey(
+        Scan, on_delete=models.CASCADE, related_name="scan_parameters",
+    )
+    parameter = models.ForeignKey(
+        "assets.Parameter", on_delete=models.CASCADE,
+        related_name="scan_links",
+    )
+    is_new = models.BooleanField(default=False)
+    seen_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["scan", "parameter"], name="uniq_scan_parameter",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["scan", "is_new"]),
+        ]

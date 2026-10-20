@@ -38,6 +38,10 @@ def execute_scan(scan_id: int) -> dict:
     )
 
     try:
+        wl_lines = None
+        if scan.wordlist_id:
+            wl_lines = scan.wordlist.load_lines()
+
         for event in iter_scan_events(
             target=scan.target,
             scope=scope,
@@ -45,6 +49,7 @@ def execute_scan(scan_id: int) -> dict:
             api_scan=scan.api_scan,
             crawl=scan.crawl,
             crawl_depth=scan.crawl_depth,
+            wordlist_lines=wl_lines,
         ):
             # cancelamento cooperativo
             current = Scan.objects.filter(pk=scan_id).values("status").first()

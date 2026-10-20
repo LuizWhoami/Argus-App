@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV /mnt/c/Users/binck/Desktop/projectBUG/bounty-agent/venv
+set -gx VIRTUAL_ENV /home/luiz/Desktop/PC/projects/Argus-App/venv
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/"bin $PATH
