@@ -10,7 +10,7 @@ def healthz(request):
 
 def root(request):
     if request.user.is_authenticated:
-        return redirect("programs:list")
+        return redirect("results:dashboard")
     return redirect("accounts:login")
 
 
@@ -21,4 +21,6 @@ urlpatterns = [
     path("accounts/", include("apps.accounts.urls")),
     path("programs/", include("apps.programs.urls")),
     path("scans/", include("apps.scans.urls")),
+    path("results/", include("apps.results.urls")),
+    path("wordlists/", include("apps.wordlists.urls")),
 ]

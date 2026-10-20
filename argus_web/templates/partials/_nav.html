@@ -1,0 +1,49 @@
+<div class="argus-nav__group">
+  <div class="argus-nav__title">OPERATIONS</div>
+  <a class="argus-nav__link {% if request.resolver_match.namespace == 'results' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+     href="#" data-disabled="true">
+    <i class="bi bi-speedometer2"></i><span>Dashboard</span>
+  </a>
+  <a class="argus-nav__link {% if request.resolver_match.namespace == 'programs' %}active{% endif %}"
+     href="{% url 'programs:list' %}">
+    <i class="bi bi-bullseye"></i><span>Programs</span>
+  </a>
+  <a class="argus-nav__link {% if request.resolver_match.namespace == 'scans' %}active{% endif %}"
+     href="{% url 'scans:list' %}">
+    <i class="bi bi-radar"></i><span>Scans</span>
+  </a>
+</div>
+<div class="argus-nav__group">
+  <div class="argus-nav__title">RECON</div>
+  <a class="argus-nav__link {% if request.resolver_match.url_name == 'assets' %}active{% endif %}"
+     href="#" data-disabled="true">
+    <i class="bi bi-hdd-network"></i><span>Assets</span>
+  </a>
+  <a class="argus-nav__link {% if request.resolver_match.url_name == 'endpoints' %}active{% endif %}"
+     href="#" data-disabled="true">
+    <i class="bi bi-signpost-split"></i><span>Endpoints</span>
+  </a>
+  <a class="argus-nav__link {% if request.resolver_match.url_name == 'apis' %}active{% endif %}"
+     href="#" data-disabled="true">
+    <i class="bi bi-braces"></i><span>API</span>
+  </a>
+  <a class="argus-nav__link {% if request.resolver_match.url_name == 'params' %}active{% endif %}"
+     href="#" data-disabled="true">
+    <i class="bi bi-sliders"></i><span>Parameters</span>
+  </a>
+</div>
+<div class="argus-nav__group">
+  <div class="argus-nav__title">TOOLS</div>
+  <a class="argus-nav__link {% if request.resolver_match.namespace == 'wordlists' %}active{% endif %}"
+     href="{% url 'wordlists:list' %}">
+    <i class="bi bi-list-columns"></i><span>Wordlists</span>
+  </a>
+</div>
+{% if user.is_staff %}
+<div class="argus-nav__group">
+  <div class="argus-nav__title">SYSTEM</div>
+  <a class="argus-nav__link" href="/admin/">
+    <i class="bi bi-shield-lock"></i><span>Admin</span>
+  </a>
+</div>
+{% endif %}
