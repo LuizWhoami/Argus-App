@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Argus{% endblock %}
+{% block breadcrumb_current %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-4">
+  <div>
+    <h1 class="page-title">Dashboard</h1>
+    <div class="page-subtitle">Visao consolidada dos seus programas e scans</div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <a class="stat stat--green" href="{% url 'results:assets' %}">
+      <div class="stat__label">Assets</div>
+      <div class="stat__value">{{ stats.assets }}</div>
+      <div class="stat__hint">{{ verified_assets }} verificados</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a class="stat" href="{% url 'results:endpoints' %}">
+      <div class="stat__label">Endpoints</div>
+      <div class="stat__value">{{ stats.endpoints }}</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a class="stat" href="{% url 'results:api_recon' %}">
+      <div class="stat__label">API endpoints</div>
+      <div class="stat__value">{{ stats.api_endpoints }}</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a class="stat" href="{% url 'results:params' %}">
+      <div class="stat__label">Parametros</div>
+      <div class="stat__value">{{ stats.params }}</div>
+    </a>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <span>Scans recentes</span>
+        <a class="text-small" href="{% url 'scans:list' %}">ver todos</a>
+      </div>
+      <ul class="list-group list-group-flush">
+        {% for s in recent_scans %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <code class="mono">{{ s.target }}</code>
+              <div class="text-muted text-small">{{ s.program.name }}</div>
+            </div>
+            <span class="badge
+              {% if s.status == "completed" %}bg-success
+              {% elif s.status == "running" %}bg-primary
+              {% elif s.status == "failed" %}bg-danger
+              {% else %}bg-secondary{% endif %}">{{ s.status }}</span>
+          </li>
+        {% empty %}
+          <li class="list-group-item text-muted text-small">Nenhum scan.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <span>Assets recentes</span>
+        <a class="text-small" href="{% url 'results:assets' %}">ver todos</a>
+      </div>
+      <ul class="list-group list-group-flush">
+        {% for a in recent_assets %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <code class="mono">{{ a.hostname }}</code>
+              <div class="text-muted text-small">{{ a.program.name }}</div>
+            </div>
+            {% if a.verification != "discovered" %}
+              <span class="badge bg-info">{{ a.verification }}</span>
+            {% endif %}
+          </li>
+        {% empty %}
+          <li class="list-group-item text-muted text-small">Nenhum asset.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

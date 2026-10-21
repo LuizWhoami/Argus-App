@@ -1,15 +1,19 @@
 {% extends "base.html" %}
 {% block title %}Scans — Argus{% endblock %}
+{% block breadcrumb_current %}Scans{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-  <h1 class="h3 m-0">Scans</h1>
+  <div>
+    <h1 class="page-title">Scans</h1>
+    <div class="page-subtitle">Historico de execucoes de recon</div>
+  </div>
 </div>
 
 {% if scans %}
 <div class="card">
   <div class="table-responsive">
-    <table class="table table-hover align-middle m-0">
+    <table class="table align-middle m-0">
       <thead>
         <tr>
           <th>#</th>

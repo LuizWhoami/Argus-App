@@ -25,7 +25,7 @@
 {% if rows %}
 <div class="card">
   <div class="table-responsive">
-    <table class="table table-hover align-middle m-0">
+    <table class="table align-middle m-0">
       <thead>
         <tr>
           <th>Nome</th>
@@ -48,7 +48,7 @@
             {% endif %}
           </td>
           <td><span class="badge bg-secondary">{{ w.kind }}</span></td>
-          <td>{{ w._lines }}</td>
+          <td>{{ w.line_count }}</td>
           <td>
             {% if w.is_builtin %}
               <span class="badge bg-info">embutida</span>

@@ -1,169 +1,36 @@
 {% extends "base.html" %}
-{% block title %}Scan #{{ scan.pk }} — Argus
-<h2 class="h5 mt-4 mb-3">Achados deste scan</h2>
-
-<ul class="nav nav-tabs" id="findingsTabs" role="tablist">
-  <li class="nav-item" role="presentation">
-    <button class="nav-link active" id="tab-assets-btn"
-            data-bs-toggle="tab" data-bs-target="#tab-assets"
-            type="button" role="tab">
-      Assets
-      <a class="badge bg-secondary text-decoration-none"
-         href="{% url 'scans:stage' scan.pk 'subdomains' %}">{{ assets|length }}</a>
-    </button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="tab-endpoints-btn"
-            data-bs-toggle="tab" data-bs-target="#tab-endpoints"
-            type="button" role="tab">
-      Endpoints
-      <a class="badge bg-secondary text-decoration-none"
-         href="{% url 'scans:stage' scan.pk 'crawl' %}">{{ endpoints|length }}</a>
-    </button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="tab-apis-btn"
-            data-bs-toggle="tab" data-bs-target="#tab-apis"
-            type="button" role="tab">
-      APIs
-      <a class="badge bg-secondary text-decoration-none"
-         href="{% url 'scans:stage' scan.pk 'api' %}">{{ apis|length }}</a>
-    </button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="tab-params-btn"
-            data-bs-toggle="tab" data-bs-target="#tab-params"
-            type="button" role="tab">
-      Params
-      <a class="badge bg-secondary text-decoration-none"
-         href="{% url 'scans:stage' scan.pk 'params' %}">{{ params|length }}</a>
-    </button>
-  </li>
-</ul>
-
-<div class="tab-content border border-top-0 rounded-bottom p-3 bg-white">
-
-  <div class="tab-pane fade show active" id="tab-assets" role="tabpanel">
-    {% if assets %}
-      <table class="table table-sm table-hover m-0">
-        <thead><tr><th>Hostname</th><th>IP</th><th>Alive</th><th>Verificação</th></tr></thead>
-        <tbody>
-        {% for a in assets %}
-          <tr>
-            <td><code class="mono">{{ a.hostname }}</code></td>
-            <td>{{ a.ip|default:"—" }}</td>
-            <td>{% if a.is_alive %}<span class="badge bg-success">up</span>{% else %}—{% endif %}</td>
-            <td><span class="badge
-              {% if a.verification == "verified" %}bg-success
-              {% elif a.verification == "interesting" %}bg-primary
-              {% elif a.verification == "false_positive" %}bg-danger
-              {% else %}bg-secondary{% endif %}">{{ a.verification }}</span></td>
-          </tr>
-        {% endfor %}
-        </tbody>
-      </table>
-    {% else %}
-      <div class="text-muted small py-2">Nenhum asset descoberto.</div>
-    {% endif %}
-  </div>
-
-  <div class="tab-pane fade" id="tab-endpoints" role="tabpanel">
-    {% if endpoints %}
-      <table class="table table-sm table-hover m-0">
-        <thead><tr><th>URL</th><th>Method</th><th>Status</th><th>Source</th><th>Verificação</th></tr></thead>
-        <tbody>
-        {% for e in endpoints %}
-          <tr>
-            <td><code class="mono small">{{ e.url|truncatechars:80 }}</code></td>
-            <td>{{ e.method }}</td>
-            <td>{{ e.status_code|default:"—" }}</td>
-            <td class="small text-muted">{{ e.source }}</td>
-            <td><span class="badge
-              {% if e.verification == "verified" %}bg-success
-              {% elif e.verification == "interesting" %}bg-primary
-              {% elif e.verification == "false_positive" %}bg-danger
-              {% else %}bg-secondary{% endif %}">{{ e.verification }}</span></td>
-          </tr>
-        {% endfor %}
-        </tbody>
-      </table>
-    {% else %}
-      <div class="text-muted small py-2">Nenhum endpoint descoberto.</div>
-    {% endif %}
-  </div>
-
-  <div class="tab-pane fade" id="tab-apis" role="tabpanel">
-    {% if apis %}
-      <table class="table table-sm table-hover m-0">
-        <thead><tr><th>URL</th><th>Kind</th><th>Status</th><th>Verificação</th></tr></thead>
-        <tbody>
-        {% for e in apis %}
-          <tr>
-            <td><code class="mono small">{{ e.url|truncatechars:90 }}</code></td>
-            <td><span class="badge bg-info">{{ e.kind }}</span></td>
-            <td>{{ e.status_code|default:"—" }}</td>
-            <td><span class="badge
-              {% if e.verification == "verified" %}bg-success
-              {% elif e.verification == "interesting" %}bg-primary
-              {% elif e.verification == "false_positive" %}bg-danger
-              {% else %}bg-secondary{% endif %}">{{ e.verification }}</span></td>
-          </tr>
-        {% endfor %}
-        </tbody>
-      </table>
-    {% else %}
-      <div class="text-muted small py-2">Nenhuma API descoberta.</div>
-    {% endif %}
-  </div>
-
-  <div class="tab-pane fade" id="tab-params" role="tabpanel">
-    {% if params %}
-      <table class="table table-sm table-hover m-0">
-        <thead><tr><th>Param</th><th>Local</th><th>Endpoint</th><th>Verificação</th></tr></thead>
-        <tbody>
-        {% for p in params %}
-          <tr>
-            <td><code class="mono">{{ p.name }}</code></td>
-            <td><span class="badge bg-secondary">{{ p.location }}</span></td>
-            <td><code class="mono small">{{ p.endpoint.url|truncatechars:70 }}</code></td>
-            <td><span class="badge
-              {% if p.verification == "verified" %}bg-success
-              {% elif p.verification == "interesting" %}bg-primary
-              {% elif p.verification == "false_positive" %}bg-danger
-              {% else %}bg-secondary{% endif %}">{{ p.verification }}</span></td>
-          </tr>
-        {% endfor %}
-        </tbody>
-      </table>
-    {% else %}
-      <div class="text-muted small py-2">Nenhum parametro descoberto.</div>
-    {% endif %}
-  </div>
-
-</div>
-
-{% endblock %}
+{% block title %}Scan #{{ scan.pk }} — Argus{% endblock %}
+{% block breadcrumb_current %}Scan #{{ scan.pk }}{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-start mb-4">
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
   <div>
-    <h1 class="h3 m-0">Scan #{{ scan.pk }}</h1>
-    <div class="text-muted small">
-      <code class="mono">{{ scan.target }}</code> ·
-      {{ scan.program.name }} ·
-      criado {{ scan.created_at|date:"Y-m-d H:i:s" }}
+    <h1 class="page-title">
+      Scan #{{ scan.pk }}
       {% if review %}
-        · <span class="badge bg-info">revisado por {{ review.reviewed_by.username|default:'?' }}</span>
+        <span class="badge bg-info ms-2" style="font-size:0.7rem;">revisado</span>
       {% endif %}
+    </h1>
+    <div class="page-subtitle">
+      <code class="mono">{{ scan.target }}</code>
+      <span class="mx-2">·</span>
+      {{ scan.program.name }}
+      <span class="mx-2">·</span>
+      <span class="text-small">{{ scan.created_at|date:"Y-m-d H:i" }}</span>
     </div>
   </div>
-  <div class="d-flex gap-2">
+
+  <div class="d-flex gap-2 flex-wrap">
     <a class="btn btn-sm btn-outline-info"
        href="{% url 'scans:diff' scan.pk %}"
-       title="Comparar com scan anterior">Diff</a>
+       title="Comparar com scan anterior">
+      <i class="bi bi-file-diff"></i> Diff
+    </a>
     <a class="btn btn-sm btn-outline-success"
        href="{% url 'scans:export_md' scan.pk %}"
-       title="Baixar Markdown">Exportar .md</a>
+       title="Baixar Markdown">
+      <i class="bi bi-file-earmark-text"></i> .md
+    </a>
     <a class="btn btn-sm btn-outline-success"
        href="{% url 'scans:export_csv' scan.pk %}"
        title="Baixar CSV">.csv</a>
@@ -171,26 +38,38 @@
        href="{% url 'scans:export_json' scan.pk %}"
        title="Baixar JSON">.json</a>
     <a class="btn btn-sm btn-outline-secondary"
-       href="{% url 'scans:list' %}">Voltar</a>
+       href="{% url 'scans:list' %}">
+      <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+
     {% if not scan.is_terminal %}
-      <form method="post" action="{% url 'scans:cancel' scan.pk %}">
+      <form method="post" action="{% url 'scans:cancel' scan.pk %}" class="m-0">
         {% csrf_token %}
-        <button class="btn btn-sm btn-outline-warning">Cancelar</button>
+        <button class="btn btn-sm btn-outline-warning">
+          <i class="bi bi-x-circle"></i> Cancelar
+        </button>
       </form>
     {% else %}
-      <form method="post" action="{% url 'scans:review' scan.pk %}">
+      <form method="post" action="{% url 'scans:review' scan.pk %}" class="m-0">
         {% csrf_token %}
         {% if review %}
-          <button class="btn btn-sm btn-outline-secondary">Desmarcar revisão</button>
+          <button class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-bookmark-dash"></i> Desmarcar
+          </button>
         {% else %}
-          <button class="btn btn-sm btn-outline-info">Marcar como revisado</button>
+          <button class="btn btn-sm btn-outline-info">
+            <i class="bi bi-bookmark-check"></i> Revisar
+          </button>
         {% endif %}
       </form>
       <form method="post" action="{% url 'scans:delete' scan.pk %}"
-            onsubmit="return confirm('Excluir scan #{{ scan.pk }}? Esta ação não pode ser desfeita.');">
+            class="m-0"
+            onsubmit="return confirm('Excluir scan #{{ scan.pk }}? Irreversivel.');">
         {% csrf_token %}
         <input type="hidden" name="confirm" value="delete {{ scan.pk }}">
-        <button class="btn btn-sm btn-outline-danger">Excluir</button>
+        <button class="btn btn-sm btn-outline-danger">
+          <i class="bi bi-trash"></i> Excluir
+        </button>
       </form>
     {% endif %}
   </div>
@@ -201,5 +80,171 @@
      hx-trigger="every 2s"
      hx-swap="innerHTML">
   {% include "scans/_status.html" %}
+</div>
+
+<h2 class="section-label mt-4">ACHADOS DESTE SCAN</h2>
+
+<ul class="nav nav-tabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" data-bs-toggle="tab"
+            data-bs-target="#tab-assets" type="button" role="tab">
+      <i class="bi bi-hdd-network"></i> Assets
+      <span class="badge bg-secondary">{{ assets|length }}</span>
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" data-bs-toggle="tab"
+            data-bs-target="#tab-endpoints" type="button" role="tab">
+      <i class="bi bi-signpost-split"></i> Endpoints
+      <span class="badge bg-secondary">{{ endpoints|length }}</span>
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" data-bs-toggle="tab"
+            data-bs-target="#tab-apis" type="button" role="tab">
+      <i class="bi bi-braces"></i> APIs
+      <span class="badge bg-secondary">{{ apis|length }}</span>
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" data-bs-toggle="tab"
+            data-bs-target="#tab-params" type="button" role="tab">
+      <i class="bi bi-sliders"></i> Params
+      <span class="badge bg-secondary">{{ params|length }}</span>
+    </button>
+  </li>
+</ul>
+
+<div class="tab-content border border-top-0 rounded-bottom p-3">
+
+  <div class="tab-pane fade show active" id="tab-assets" role="tabpanel">
+    {% if assets %}
+      <div class="table-responsive">
+        <table class="table table-sm m-0">
+          <thead>
+            <tr><th>Hostname</th><th>IP</th><th>Alive</th><th>Verificacao</th></tr>
+          </thead>
+          <tbody>
+          {% for a in assets %}
+            <tr>
+              <td><code class="mono">{{ a.hostname }}</code></td>
+              <td>{{ a.ip|default:"—" }}</td>
+              <td>{% if a.is_alive %}<span class="badge bg-success">up</span>{% else %}—{% endif %}</td>
+              <td>
+                <span class="badge
+                  {% if a.verification == "verified" %}bg-success
+                  {% elif a.verification == "interesting" %}bg-primary
+                  {% elif a.verification == "false_positive" %}bg-danger
+                  {% else %}bg-secondary{% endif %}">{{ a.verification }}</span>
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="text-muted text-small py-3 text-center">
+        Nenhum asset descoberto.
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="tab-pane fade" id="tab-endpoints" role="tabpanel">
+    {% if endpoints %}
+      <div class="table-responsive">
+        <table class="table table-sm m-0">
+          <thead>
+            <tr><th>URL</th><th>Method</th><th>Status</th><th>Source</th><th>Verificacao</th></tr>
+          </thead>
+          <tbody>
+          {% for e in endpoints %}
+            <tr>
+              <td><code class="mono text-small">{{ e.url|truncatechars:80 }}</code></td>
+              <td>{{ e.method }}</td>
+              <td>{{ e.status_code|default:"—" }}</td>
+              <td class="text-muted text-small">{{ e.source }}</td>
+              <td>
+                <span class="badge
+                  {% if e.verification == "verified" %}bg-success
+                  {% elif e.verification == "interesting" %}bg-primary
+                  {% elif e.verification == "false_positive" %}bg-danger
+                  {% else %}bg-secondary{% endif %}">{{ e.verification }}</span>
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="text-muted text-small py-3 text-center">
+        Nenhum endpoint descoberto.
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="tab-pane fade" id="tab-apis" role="tabpanel">
+    {% if apis %}
+      <div class="table-responsive">
+        <table class="table table-sm m-0">
+          <thead>
+            <tr><th>URL</th><th>Kind</th><th>Status</th><th>Verificacao</th></tr>
+          </thead>
+          <tbody>
+          {% for e in apis %}
+            <tr>
+              <td><code class="mono text-small">{{ e.url|truncatechars:90 }}</code></td>
+              <td><span class="badge bg-info">{{ e.kind }}</span></td>
+              <td>{{ e.status_code|default:"—" }}</td>
+              <td>
+                <span class="badge
+                  {% if e.verification == "verified" %}bg-success
+                  {% elif e.verification == "interesting" %}bg-primary
+                  {% elif e.verification == "false_positive" %}bg-danger
+                  {% else %}bg-secondary{% endif %}">{{ e.verification }}</span>
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="text-muted text-small py-3 text-center">
+        Nenhuma API descoberta.
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="tab-pane fade" id="tab-params" role="tabpanel">
+    {% if params %}
+      <div class="table-responsive">
+        <table class="table table-sm m-0">
+          <thead>
+            <tr><th>Param</th><th>Local</th><th>Endpoint</th><th>Verificacao</th></tr>
+          </thead>
+          <tbody>
+          {% for p in params %}
+            <tr>
+              <td><code class="mono">{{ p.name }}</code></td>
+              <td><span class="badge bg-secondary">{{ p.location }}</span></td>
+              <td><code class="mono text-small">{{ p.endpoint.url|truncatechars:70 }}</code></td>
+              <td>
+                <span class="badge
+                  {% if p.verification == "verified" %}bg-success
+                  {% elif p.verification == "interesting" %}bg-primary
+                  {% elif p.verification == "false_positive" %}bg-danger
+                  {% else %}bg-secondary{% endif %}">{{ p.verification }}</span>
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="text-muted text-small py-3 text-center">
+        Nenhum parametro descoberto.
+      </div>
+    {% endif %}
+  </div>
+
 </div>
 {% endblock %}

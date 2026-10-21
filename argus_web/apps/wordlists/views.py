@@ -23,7 +23,7 @@ def list_wordlists(request):
     rows = list(qs)
     # Contagem de linhas carregada 1x para a UI
     for w in rows:
-        w._lines = len(w.load_lines())
+        w.line_count = len(w.load_lines())
 
     return render(request, "wordlists/list.html", {
         "rows": rows,

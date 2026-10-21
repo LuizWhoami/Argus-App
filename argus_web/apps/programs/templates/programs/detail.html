@@ -2,11 +2,16 @@
 {% block title %}{{ program.name }} — Argus{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+{% block breadcrumb_current %}{{ program.name }}{% endblock %}
+
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
   <div>
-    <h1 class="h3 m-0">{{ program.name }}</h1>
-    <div class="text-muted small">slug: <code class="mono">{{ program.slug }}</code>
-      · Max RPS: {{ program.max_rps }}</div>
+    <h1 class="page-title">{{ program.name }}</h1>
+    <div class="page-subtitle">
+      <code class="mono">{{ program.slug }}</code>
+      <span class="mx-2">·</span>
+      Max RPS: {{ program.max_rps }}
+    </div>
   </div>
   <div class="d-flex gap-2">
     <a class="btn btn-outline-primary"

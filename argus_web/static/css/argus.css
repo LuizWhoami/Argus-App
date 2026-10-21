@@ -1097,3 +1097,347 @@ pre {
   background: var(--argus-surface-2) !important;
   color: var(--argus-green) !important;
 }
+
+/* ============================================================
+   SEM HOVER EM TABELAS / CARDS / ACOES DE SCAN
+   Remove a sensacao de "mouse trocando cor" na /scans/ e afins.
+   Feedback de foco por teclado continua.
+   ============================================================ */
+
+/* 1. Tabelas: linhas não mudam de cor no hover */
+.table-hover > tbody > tr:hover > *,
+.table-hover > tbody > tr:hover > th,
+.table-hover > tbody > tr:hover > td {
+  background-color: transparent !important;
+  color: inherit !important;
+}
+
+/* 2. Cards: borda não muda no hover (todas as telas) */
+.card:hover {
+  border-color: var(--argus-border) !important;
+}
+
+/* 3. Stat cards: borda não muda no hover */
+.stat:hover {
+  border-color: var(--argus-border) !important;
+}
+
+/* 4. List group action: mantém a cor base (sem transição no hover) */
+.list-group-item-action:hover {
+  background: transparent !important;
+}
+
+/* 5. Remove transições dos botões e elementos clicáveis de scan.
+      Mantemos apenas a transição de transform da sidebar (mobile). */
+.btn,
+.btn-sm,
+a.btn,
+button.btn {
+  transition: none !important;
+}
+
+/* 6. Linhas da tabela e cards não têm mais transition */
+.table tbody tr,
+.table tbody tr:hover,
+.card,
+.stat {
+  transition: none !important;
+}
+
+/* 7. Feedback ainda existe via cursor + foco teclado */
+.btn { cursor: pointer; }
+.btn:focus-visible {
+  outline: 2px solid var(--argus-green);
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   TABELAS SEM HOVER — override TOTAL (inclui CSS vars do BS 5.3)
+   ============================================================ */
+
+/* Bootstrap 5.3 usa --bs-table-bg-state, nao background-color.
+   Anular as duas garante que nao ha mudanca. */
+.table-hover > tbody > tr:hover > *,
+.table-hover > tbody > tr:focus-within > * {
+  --bs-table-bg-state: transparent !important;
+  --bs-table-color-state: inherit !important;
+  --bs-table-hover-bg: transparent !important;
+  --bs-table-hover-color: inherit !important;
+  background-color: transparent !important;
+  color: inherit !important;
+}
+
+/* Remove transicao de qualquer celula / linha / badge dentro de tabela */
+.table,
+.table tr,
+.table th,
+.table td,
+.table td *,
+.table tbody tr,
+.table tbody tr * {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Inputs e selects dentro de tabela: sem transicao no hover, sem mudar cor */
+.table input,
+.table select,
+.table button,
+.table input:hover,
+.table select:hover {
+  transition: none !important;
+  background: var(--argus-bg-2) !important;
+  color: var(--argus-text) !important;
+  border-color: var(--argus-border) !important;
+}
+
+/* Mas foco continua com destaque visual (acessibilidade) */
+.table input:focus,
+.table select:focus {
+  border-color: var(--argus-green) !important;
+  box-shadow: 0 0 0 3px rgba(57,255,20,0.15) !important;
+  outline: none;
+}
+
+/* ============================================================
+   COLOR-SCHEME: força controles nativos (select, file, autofill)
+   a usar cores escuras. Resolve o "branco" em selects e inputs.
+   ============================================================ */
+
+html {
+  color-scheme: dark;
+}
+
+/* Reforço: opções do select (alguns navegadores ignoram sem isso) */
+select.form-select,
+select.form-control {
+  color-scheme: dark;
+  background-color: var(--argus-bg-2) !important;
+  color: var(--argus-text) !important;
+  border-color: var(--argus-border) !important;
+}
+
+select.form-select option,
+select.form-control option {
+  background-color: var(--argus-surface) !important;
+  color: var(--argus-text) !important;
+}
+
+select.form-select option:checked,
+select.form-control option:checked {
+  background-color: var(--argus-green-dim) !important;
+  color: var(--argus-text) !important;
+}
+
+/* Input file — botão nativo */
+input[type="file"] {
+  color-scheme: dark;
+  color: var(--argus-text) !important;
+  background: var(--argus-bg-2) !important;
+  border: 1px solid var(--argus-border) !important;
+  border-radius: var(--argus-radius);
+  padding: 0.4rem 0.5rem;
+}
+
+input[type="file"]::file-selector-button {
+  background: var(--argus-surface-2);
+  color: var(--argus-text);
+  border: 1px solid var(--argus-border);
+  border-radius: var(--argus-radius-sm);
+  padding: 0.3rem 0.7rem;
+  margin-right: 0.5rem;
+  cursor: pointer;
+  font-family: var(--argus-font-sans);
+  font-size: 0.8rem;
+}
+
+/* Autofill do Chrome — remove o fundo azul/branco */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--argus-text) !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--argus-bg-2) inset !important;
+  box-shadow: 0 0 0 1000px var(--argus-bg-2) inset !important;
+  caret-color: var(--argus-text);
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Seleção de texto (arrastar com mouse) */
+::selection {
+  background: var(--argus-green);
+  color: #052A02;
+}
+
+/* Scrollbar escura (Chrome/Edge) */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--argus-bg-2); }
+::-webkit-scrollbar-thumb {
+  background: var(--argus-border);
+  border-radius: var(--argus-radius-sm);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--argus-green-dim); }
+
+/* ============================================================
+   OVERRIDE FINAL — tabela /results/ + inputs / selects / options
+   Cobre cada elemento do HTML real (thead, td, code, form, select, input)
+   ============================================================ */
+
+/* Thead: cinza escuro */
+.table thead,
+.table thead tr,
+.table thead th,
+.table > thead > tr > th {
+  background: var(--argus-bg-2) !important;
+  color: var(--argus-text-2) !important;
+  border-color: var(--argus-border) !important;
+}
+
+/* Tbody: transparente */
+.table tbody,
+.table tbody tr,
+.table tbody td,
+.table > tbody > tr > td {
+  background: transparent !important;
+  color: var(--argus-text) !important;
+  border-color: var(--argus-border) !important;
+}
+
+/* <code> dentro de tabela — texto claro, fundo escuro */
+.table code,
+.table td code {
+  background: var(--argus-bg) !important;
+  color: var(--argus-green) !important;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+}
+
+/* Forms dentro de tabela */
+.table form,
+.table td form {
+  background: transparent !important;
+}
+
+/* Select (fechado) dentro de tabela */
+.table .form-select,
+.table select,
+.table td select {
+  background-color: var(--argus-bg-2) !important;
+  color: var(--argus-text) !important;
+  border: 1px solid var(--argus-border) !important;
+  color-scheme: dark !important;
+}
+
+.table .form-select:focus,
+.table select:focus {
+  border-color: var(--argus-green) !important;
+  box-shadow: 0 0 0 3px rgba(57,255,20,0.15) !important;
+}
+
+/* Select — opções (Chrome/Firefox/Safari) */
+.table select option,
+.table .form-select option,
+select option {
+  background-color: var(--argus-surface) !important;
+  color: var(--argus-text) !important;
+}
+
+select option:checked,
+select option:hover,
+select option:focus {
+  background-color: var(--argus-green-dim) !important;
+  color: var(--argus-green) !important;
+}
+
+/* Select — quando o dropdown está aberto (Chrome) */
+select:focus option:checked {
+  background: linear-gradient(var(--argus-green) 0%, var(--argus-green) 100%) !important;
+  color: #052A02 !important;
+}
+
+/* Input (nota) dentro de tabela */
+.table .form-control,
+.table input,
+.table td input {
+  background-color: var(--argus-bg-2) !important;
+  color: var(--argus-text) !important;
+  border: 1px solid var(--argus-border) !important;
+}
+
+.table .form-control::placeholder,
+.table input::placeholder {
+  color: var(--argus-text-2) !important;
+  opacity: 0.7;
+}
+
+.table .form-control:focus,
+.table input:focus {
+  border-color: var(--argus-green) !important;
+  box-shadow: 0 0 0 3px rgba(57,255,20,0.15) !important;
+  outline: none !important;
+}
+
+/* Botão Salvar dentro de tabela */
+.table .btn,
+.table button {
+  transition: none !important;
+}
+
+.table .btn-outline-primary {
+  color: var(--argus-green) !important;
+  border-color: var(--argus-green-dim) !important;
+  background: transparent !important;
+}
+
+/* <td> que contém texto simples (Programa, IP) */
+.table td.text-muted,
+.table td.text-small {
+  color: var(--argus-text-2) !important;
+}
+
+/* Qualquer <small> dentro de tabela */
+.table small,
+.table .small {
+  color: var(--argus-text-2) !important;
+}
+
+/* Badge "discovered" / "up" */
+.table .badge {
+  color: inherit;
+}
+.table .badge.bg-success { color: var(--argus-green) !important; }
+.table .badge.bg-secondary { color: var(--argus-text-2) !important; }
+
+/* ============================================================
+   TABELAS: transparente em dark mode
+   ============================================================ */
+
+html[data-bs-theme="dark"] .table,
+html[data-bs-theme="dark"] .table > thead,
+html[data-bs-theme="dark"] .table > tbody,
+html[data-bs-theme="dark"] .table > tbody > tr,
+html[data-bs-theme="dark"] .table > tbody > tr > td {
+  --bs-table-bg: transparent !important;
+  --bs-table-color: var(--argus-text) !important;
+  --bs-table-border-color: var(--argus-border) !important;
+  --bs-table-accent-bg: transparent !important;
+  background-color: transparent !important;
+  color: var(--argus-text) !important;
+  border-color: var(--argus-border) !important;
+}
+
+html[data-bs-theme="dark"] .table > thead > tr > th {
+  --bs-table-bg: var(--argus-bg-2) !important;
+  --bs-table-color: var(--argus-text-2) !important;
+  background-color: var(--argus-bg-2) !important;
+  color: var(--argus-text-2) !important;
+}
+
+html[data-bs-theme="dark"] .table .form-control,
+html[data-bs-theme="dark"] .table .form-select {
+  background-color: var(--argus-bg-2) !important;
+  color: var(--argus-text) !important;
+  border-color: var(--argus-border) !important;
+}
