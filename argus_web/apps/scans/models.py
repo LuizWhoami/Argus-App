@@ -94,6 +94,11 @@ class Scan(models.Model):
         self.finished_at = timezone.now()
         self.save(update_fields=["status", "finished_at"])
 
+    @property
+    def is_api_recon(self) -> bool:
+        """Scan dedicado a API recon: api_scan on, crawl off."""
+        return self.api_scan and not self.crawl
+
     def is_terminal(self) -> bool:
         return self.status in self.TERMINAL_STATES
 

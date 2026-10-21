@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% block title %}API Recon — Argus{% endblock %}
+{% block breadcrumb_current %}API Recon{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-4">
+  <div>
+    <h1 class="page-title">API Recon</h1>
+    <div class="page-subtitle">
+      Descubra endpoints de API (Swagger, OpenAPI, GraphQL, REST) com wordlist
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat stat--green">
+      <div class="stat__label">Swagger</div>
+      <div class="stat__value">{{ total_by_kind.swagger }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat stat--green">
+      <div class="stat__label">OpenAPI</div>
+      <div class="stat__value">{{ total_by_kind.openapi }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat">
+      <div class="stat__label">GraphQL</div>
+      <div class="stat__value">{{ total_by_kind.graphql }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat">
+      <div class="stat__label">REST</div>
+      <div class="stat__value">{{ total_by_kind.rest }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header">
+    <span>Nova execucao</span>
+  </div>
+  <div class="card-body">
+    {% if not programs %}
+      <div class="empty-state">
+        <h3>Nenhum programa cadastrado</h3>
+        <p class="text-muted">Crie um programa antes de rodar API recon.</p>
+        <a class="btn btn-primary" href="{% url 'programs:create' %}">
+          Criar programa
+        </a>
+      </div>
+    {% else %}
+      <form method="post" class="row g-3">
+        {% csrf_token %}
+
+        <div class="col-md-3">
+          <label class="form-label">Programa</label>
+          <select name="program" class="form-select" required>
+            {% for p in programs %}
+              <option value="{{ p.slug }}">{{ p.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Alvo (hostname)</label>
+          <input name="target" class="form-control" required
+                 placeholder="ex: api.example.com">
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Wordlist</label>
+          <select name="wordlist" class="form-select">
+            <option value="">— default (api_paths.txt) —</option>
+            {% for w in wordlists %}
+              <option value="{{ w.pk }}">
+                {{ w.name }}{% if w.is_builtin %} (embutida){% endif %}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-2 d-flex align-items-end">
+          <button class="btn btn-primary w-100" type="submit">
+            <i class="bi bi-radar"></i> Iniciar
+          </button>
+        </div>
+      </form>
+      <div class="text-muted text-small mt-2">
+        O scan roda em modo API-only: subdomains + DNS + HTTP + paths de API.
+        Crawling nao e executado.
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if recent_scans %}
+<div class="card mb-4">
+  <div class="card-header">
+    <span>Scans de API recentes</span>
+  </div>
+  <ul class="list-group list-group-flush">
+    {% for s in recent_scans %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      <div>
+        <a href="{% url 'scans:detail' s.pk %}" class="mono">
+          #{{ s.pk }} — {{ s.target }}
+        </a>
+        <div class="text-muted text-small">
+          {{ s.program.name }} · {{ s.created_at|date:"Y-m-d H:i" }}
+        </div>
+      </div>
+      <span class="badge
+        {% if s.status == "completed" %}bg-success
+        {% elif s.status == "running" %}bg-primary
+        {% elif s.status == "failed" %}bg-danger
+        {% else %}bg-secondary{% endif %}">{{ s.status }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header">
+    <span>Endpoints de API descobertos</span>
+    <span class="text-muted text-small">{{ total }} resultado(s)</span>
+  </div>
+
+  <div class="card-body border-bottom">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label">Programa</label>
+        <select name="program" class="form-select form-select-sm">
+          <option value="">— todos —</option>
+          {% for p in programs %}
+            <option value="{{ p.slug }}"
+              {% if current_program_slug == p.slug %}selected{% endif %}>
+              {{ p.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Tipo</label>
+        <select name="kind" class="form-select form-select-sm">
+          <option value="">— todos —</option>
+          <option value="swagger" {% if current_kind == "swagger" %}selected{% endif %}>swagger</option>
+          <option value="openapi" {% if current_kind == "openapi" %}selected{% endif %}>openapi</option>
+          <option value="graphql" {% if current_kind == "graphql" %}selected{% endif %}>graphql</option>
+          <option value="rest"    {% if current_kind == "rest" %}selected{% endif %}>rest</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Buscar</label>
+        <input name="q" class="form-control form-control-sm"
+               value="{{ q }}" placeholder="url ou hostname">
+      </div>
+      <div class="col-md-3 d-flex gap-1">
+        <button class="btn btn-sm btn-primary">Filtrar</button>
+        <a class="btn btn-sm btn-outline-secondary"
+           href="{% url 'results:export' %}?kind=apis{% if current_program_slug %}&program={{ current_program_slug }}{% endif %}">
+          Exportar JSON
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-hover align-middle m-0">
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th>URL</th>
+          <th>Status</th>
+          <th>Host</th>
+          <th>Verificacao</th>
+          <th style="width: 240px;">Acao</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td><span class="badge bg-info">{{ r.kind }}</span></td>
+          <td><code class="mono">{{ r.url|truncatechars:80 }}</code></td>
+          <td>{{ r.status_code|default:"—" }}</td>
+          <td><code class="mono text-small">{{ r.asset.hostname }}</code></td>
+          <td>
+            <span class="badge
+              {% if r.verification == "verified" %}bg-success
+              {% elif r.verification == "interesting" %}bg-primary
+              {% elif r.verification == "false_positive" %}bg-danger
+              {% else %}bg-secondary{% endif %}">{{ r.verification }}</span>
+          </td>
+          <td>
+            <form method="post" action="{% url 'results:mark' 'apis' r.pk %}"
+                  class="d-flex gap-1">
+              {% csrf_token %}
+              <select name="verification" class="form-select form-select-sm">
+                {% for v, label in verification_choices %}
+                  <option value="{{ v }}" {% if r.verification == v %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+              <button class="btn btn-sm btn-outline-primary">Salvar</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6" class="text-center text-muted py-4">
+              Nenhum endpoint de API descoberto ainda.<br>
+              <span class="text-small">Use o formulario acima para iniciar um reconhecimento.</span>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

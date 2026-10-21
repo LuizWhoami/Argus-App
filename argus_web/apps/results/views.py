@@ -8,7 +8,9 @@ from django.views.decorators.http import require_POST
 
 from apps.assets.models import Asset, Endpoint, HTTPProbe, Parameter
 from apps.programs.models import Program
+from apps.orchestration.services import enqueue_scan
 from apps.scans.models import Scan
+from apps.wordlists.models import Wordlist
 
 
 def _programs_of(user):
@@ -244,3 +246,102 @@ def export_json(request):
         data.append(d)
 
     return JsonResponse({"kind": kind, "count": len(data), "results": data})
+
+@login_required
+def api_recon(request):
+    """API Recon: trigger + resultados por tipo."""
+    # -------------------- POST: dispara novo scan --------------------
+    if request.method == "POST":
+        slug = request.POST.get("program", "").strip()
+        target = request.POST.get("target", "").strip().lower()
+        wordlist_id = request.POST.get("wordlist", "").strip()
+
+        if not slug or not target:
+            messages.error(request, "Programa e alvo sao obrigatorios.")
+            return redirect("results:api_recon")
+
+        program = Program.objects.filter(slug=slug, owner=request.user).first()
+        if not program:
+            messages.error(request, "Programa nao encontrado.")
+            return redirect("results:api_recon")
+
+        from argus_agent.scope import Scope
+        scope = Scope(program.allowed_patterns(), program.excluded_patterns())
+        if not scope.is_allowed(target):
+            messages.error(
+                request,
+                f"Alvo '{target}' fora do escopo do programa '{program.name}'.",
+            )
+            return redirect("results:api_recon")
+
+        wl = None
+        if wordlist_id:
+            wl = Wordlist.objects.filter(pk=wordlist_id).filter(
+                Q(is_builtin=True) | Q(owner=request.user)
+            ).first()
+
+        scan = Scan.objects.create(
+            program=program,
+            target=target,
+            requested_by=request.user,
+            api_scan=True,
+            crawl=False,
+            crawl_depth=1,
+            wordlist=wl,
+        )
+        enqueue_scan(scan)
+        messages.success(request, f"API recon iniciado para '{target}'.")
+        return redirect("scans:detail", pk=scan.pk)
+
+    # -------------------- GET: renderiza --------------------
+    from django.db.models import Count
+
+    programs = Program.objects.filter(owner=request.user)
+    wordlists = Wordlist.objects.filter(
+        Q(is_builtin=True) | Q(owner=request.user),
+        kind=Wordlist.KIND_API,
+    ).order_by("-is_builtin", "name")
+
+    recent_scans = (Scan.objects
+                    .filter(program__owner=request.user,
+                            api_scan=True, crawl=False)
+                    .select_related("program")
+                    .order_by("-created_at")[:5])
+
+    qs = (Endpoint.objects
+          .filter(asset__program__owner=request.user)
+          .exclude(kind="")
+          .select_related("asset", "asset__program"))
+
+    prog_slug = request.GET.get("program", "").strip()
+    if prog_slug:
+        qs = qs.filter(asset__program__slug=prog_slug)
+
+    kind_filter = request.GET.get("kind", "").strip()
+    if kind_filter:
+        qs = qs.filter(kind=kind_filter)
+
+    q = request.GET.get("q", "").strip()
+    if q:
+        qs = qs.filter(Q(url__icontains=q) | Q(asset__hostname__icontains=q))
+
+    kind_counts = dict(qs.values_list("kind").annotate(Count("id")))
+    total_by_kind = {
+        "swagger": kind_counts.get("swagger", 0),
+        "openapi": kind_counts.get("openapi", 0),
+        "graphql": kind_counts.get("graphql", 0),
+        "rest": kind_counts.get("rest", 0),
+    }
+
+    return render(request, "results/api_recon.html", {
+        "programs": programs,
+        "wordlists": wordlists,
+        "recent_scans": recent_scans,
+        "rows": qs.order_by("kind", "url")[:500],
+        "total": qs.count(),
+        "total_by_kind": total_by_kind,
+        "current_program_slug": prog_slug,
+        "current_kind": kind_filter,
+        "q": q,
+        "verification_choices": Endpoint.VERIF_CHOICES,
+    })

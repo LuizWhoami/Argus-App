@@ -1,7 +1,7 @@
 <div class="argus-nav__group">
   <div class="argus-nav__title">OPERATIONS</div>
-  <a class="argus-nav__link {% if request.resolver_match.namespace == 'results' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
-     href="#" data-disabled="true">
+  <a class="argus-nav__link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+     href="{% url 'results:dashboard' %}">
     <i class="bi bi-speedometer2"></i><span>Dashboard</span>
   </a>
   <a class="argus-nav__link {% if request.resolver_match.namespace == 'programs' %}active{% endif %}"
@@ -16,19 +16,19 @@
 <div class="argus-nav__group">
   <div class="argus-nav__title">RECON</div>
   <a class="argus-nav__link {% if request.resolver_match.url_name == 'assets' %}active{% endif %}"
-     href="#" data-disabled="true">
+     href="{% url 'results:assets' %}">
     <i class="bi bi-hdd-network"></i><span>Assets</span>
   </a>
   <a class="argus-nav__link {% if request.resolver_match.url_name == 'endpoints' %}active{% endif %}"
-     href="#" data-disabled="true">
+     href="{% url 'results:endpoints' %}">
     <i class="bi bi-signpost-split"></i><span>Endpoints</span>
   </a>
-  <a class="argus-nav__link {% if request.resolver_match.url_name == 'apis' %}active{% endif %}"
-     href="#" data-disabled="true">
-    <i class="bi bi-braces"></i><span>API</span>
+  <a class="argus-nav__link {% if request.resolver_match.url_name == 'api_recon' or request.resolver_match.url_name == 'apis' %}active{% endif %}"
+     href="{% url 'results:api_recon' %}">
+    <i class="bi bi-braces"></i><span>API Recon</span>
   </a>
   <a class="argus-nav__link {% if request.resolver_match.url_name == 'params' %}active{% endif %}"
-     href="#" data-disabled="true">
+     href="{% url 'results:params' %}">
     <i class="bi bi-sliders"></i><span>Parameters</span>
   </a>
 </div>

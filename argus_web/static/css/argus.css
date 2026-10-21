@@ -883,3 +883,217 @@ hr { border-color: var(--argus-border); opacity: 1; }
   outline: 2px solid var(--argus-green);
   outline-offset: 2px;
 }
+
+/* ============================================================
+   CONTRASTE — overrides críticos (vence Bootstrap)
+   ============================================================ */
+
+/* bg-white / bg-light → escuro */
+.bg-white, .bg-light {
+  background: var(--argus-surface) !important;
+  color: var(--argus-text) !important;
+}
+
+/* text-dark / text-black → texto claro (padrão) */
+.text-dark, .text-black {
+  color: var(--argus-text) !important;
+}
+
+/* text-primary / success / etc → paleta Argus */
+.text-primary { color: var(--argus-green) !important; }
+.text-success { color: var(--argus-green) !important; }
+.text-danger  { color: var(--argus-critical) !important; }
+.text-warning { color: var(--argus-warning) !important; }
+.text-info    { color: var(--argus-info) !important; }
+.text-body    { color: var(--argus-text) !important; }
+.text-white   { color: var(--argus-text) !important; }
+
+/* EXCEÇÃO: badge amarelo fica com fundo sólido (texto preto legível) */
+.badge.bg-warning,
+.badge.bg-warning.text-dark {
+  background: var(--argus-warning) !important;
+  color: #0A1006 !important;
+  border-color: var(--argus-warning) !important;
+}
+.badge.bg-light,
+.badge.bg-light.text-dark {
+  background: var(--argus-surface-2) !important;
+  color: var(--argus-text) !important;
+  border-color: var(--argus-border) !important;
+}
+
+/* Alerts com text-dark */
+.alert-warning.text-dark { color: var(--argus-warning) !important; }
+.alert-light.text-dark   { color: var(--argus-text) !important; }
+
+/* tab-content com bg-white → escuro */
+.tab-content.bg-white {
+  background: var(--argus-surface) !important;
+  color: var(--argus-text) !important;
+}
+
+/* Headings herdam cor certa */
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+  color: var(--argus-text) !important;
+}
+
+/* small / strong / b */
+small, .small { color: inherit; }
+strong, b { color: inherit; font-weight: 600; }
+
+/* Links genéricos (fora de botões, nav, pagination) */
+.argus-content a:not([class*="btn"]):not(.nav-link):not(.list-group-item):not(.dropdown-item):not(.page-link):not(.argus-nav__link):not(.argus-user):not(.breadcrumb-item):not(.stat) {
+  color: var(--argus-green) !important;
+  text-decoration: none;
+  transition: color var(--argus-transition);
+}
+.argus-content a:not([class*="btn"]):not(.nav-link):not(.list-group-item):not(.dropdown-item):not(.page-link):not(.argus-nav__link):not(.argus-user):not(.stat):hover {
+  color: var(--argus-green-2) !important;
+  text-decoration: underline;
+}
+
+/* Forms SEM classe .form-control (Django UserCreationForm) */
+.argus-content form input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="hidden"]):not([type="file"]):not(.form-control) {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: var(--argus-bg-2) !important;
+  border: 1px solid var(--argus-border) !important;
+  border-radius: var(--argus-radius) !important;
+  color: var(--argus-text) !important;
+  font-family: var(--argus-font-sans);
+  font-size: 0.85rem;
+}
+.argus-content form input:focus:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="hidden"]):not([type="file"]):not(.form-control) {
+  outline: none;
+  border-color: var(--argus-green) !important;
+  box-shadow: 0 0 0 3px rgba(57,255,20,0.15) !important;
+}
+.argus-content form textarea:not(.form-control),
+.argus-content form select:not(.form-select) {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: var(--argus-bg-2) !important;
+  border: 1px solid var(--argus-border) !important;
+  border-radius: var(--argus-radius) !important;
+  color: var(--argus-text) !important;
+  font-size: 0.85rem;
+}
+.argus-content form textarea:not(.form-control):focus,
+.argus-content form select:not(.form-select):focus {
+  outline: none;
+  border-color: var(--argus-green) !important;
+  box-shadow: 0 0 0 3px rgba(57,255,20,0.15) !important;
+}
+
+/* Inputs file */
+.form-control[type="file"],
+input[type="file"] {
+  color: var(--argus-text) !important;
+  background: var(--argus-bg-2) !important;
+}
+
+/* Django form helpers */
+.helptext, .form-text {
+  color: var(--argus-text-2) !important;
+  font-size: 0.75rem;
+  display: block;
+  margin-top: 0.25rem;
+}
+.errorlist {
+  color: var(--argus-critical) !important;
+  list-style: none;
+  padding: 0;
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+}
+
+/* code / pre */
+code {
+  color: var(--argus-green) !important;
+  background: rgba(57,255,20,0.08) !important;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  font-family: var(--argus-font-mono);
+}
+.table code {
+  color: var(--argus-text) !important;
+  background: var(--argus-bg) !important;
+  border: none !important;
+}
+pre {
+  background: var(--argus-bg-2) !important;
+  color: var(--argus-text) !important;
+  border: 1px solid var(--argus-border);
+  border-radius: var(--argus-radius);
+  padding: 1rem;
+}
+
+/* Bootstrap: pagination */
+.pagination .page-link {
+  background: var(--argus-surface) !important;
+  border-color: var(--argus-border) !important;
+  color: var(--argus-text) !important;
+}
+.pagination .page-link:hover {
+  background: var(--argus-surface-2) !important;
+  color: var(--argus-green) !important;
+}
+.pagination .page-item.active .page-link {
+  background: var(--argus-green) !important;
+  border-color: var(--argus-green) !important;
+  color: #052A02 !important;
+}
+.pagination .page-item.disabled .page-link {
+  background: var(--argus-bg-2) !important;
+  color: var(--argus-text-2) !important;
+}
+
+/* Bootstrap: dropdowns */
+.dropdown-menu {
+  background: var(--argus-surface) !important;
+  border: 1px solid var(--argus-border) !important;
+  color: var(--argus-text) !important;
+}
+.dropdown-item {
+  color: var(--argus-text) !important;
+}
+.dropdown-item:hover, .dropdown-item:focus {
+  background: var(--argus-surface-2) !important;
+  color: var(--argus-green) !important;
+}
+.dropdown-divider { border-color: var(--argus-border) !important; }
+
+/* Bootstrap: modais */
+.modal-content {
+  background: var(--argus-surface) !important;
+  color: var(--argus-text) !important;
+  border: 1px solid var(--argus-border) !important;
+}
+.modal-header, .modal-footer { border-color: var(--argus-border) !important; }
+.modal-header { background: var(--argus-bg-2) !important; }
+.btn-close { filter: invert(1) grayscale(1) brightness(1.5); }
+
+/* Bootstrap: tooltip */
+.tooltip-inner {
+  background: var(--argus-surface-2) !important;
+  color: var(--argus-text) !important;
+  border: 1px solid var(--argus-border) !important;
+}
+
+/* Bootstrap: accordion */
+.accordion-item {
+  background: var(--argus-surface) !important;
+  border-color: var(--argus-border) !important;
+  color: var(--argus-text) !important;
+}
+.accordion-button {
+  background: var(--argus-bg-2) !important;
+  color: var(--argus-text) !important;
+}
+.accordion-button:not(.collapsed) {
+  background: var(--argus-surface-2) !important;
+  color: var(--argus-green) !important;
+}
