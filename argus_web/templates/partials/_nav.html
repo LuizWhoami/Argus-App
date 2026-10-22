@@ -12,6 +12,10 @@
      href="{% url 'scans:list' %}">
     <i class="bi bi-radar"></i><span>Scans</span>
   </a>
+  <a class="argus-nav__link {% if request.resolver_match.url_name == 'findings' %}active{% endif %}"
+     href="{% url 'results:findings' %}">
+    <i class="bi bi-shield-exclamation"></i><span>Findings</span>
+  </a>
 </div>
 <div class="argus-nav__group">
   <div class="argus-nav__title">RECON</div>

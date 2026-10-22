@@ -8,6 +8,7 @@ from django.utils import timezone
 from apps.assets.models import (
     Asset, DNSRecord, Endpoint, HTTPProbe, Parameter,
 )
+from apps.findings.models import Finding
 from apps.scans.models import (
     Scan, ScanAsset, ScanEndpoint, ScanParameter,
     ScanEvent, ScanStage,
@@ -17,7 +18,7 @@ log = logging.getLogger(__name__)
 
 STAGE_ORDER = {
     "scope": 1, "subdomains": 2, "dns": 3, "http": 4,
-    "crawl": 5, "api": 6, "vulns": 7, "params": 8,
+    "directories": 5, "crawl": 6, "api": 7, "vulns": 8, "params": 9,
 }
 
 
@@ -131,6 +132,25 @@ def handle_event(scan: Scan, event: dict) -> None:
         asset.is_alive = True
         asset.save(update_fields=["is_alive"])
 
+
+    elif kind == "directory.found":
+        asset, a_created = Asset.objects.get_or_create(
+            program=scan.program, hostname=event["hostname"],
+        )
+        _link_asset(scan, asset, is_new=a_created)
+        source = event.get("source") or Endpoint.SOURCE_DIRSEARCH
+        endpoint, e_created = Endpoint.objects.update_or_create(
+            asset=asset, url=event["url"], method="GET",
+            defaults={
+                "status_code": event.get("status_code"),
+                "source": source,
+                "content_type": (event.get("content_type") or "")[:255],
+                "is_directory": True,
+                "response_size": event.get("content_length"),
+            },
+        )
+        _link_endpoint(scan, endpoint, is_new=e_created)
+
     elif kind == "endpoint.found":
         asset, a_created = Asset.objects.get_or_create(
             program=scan.program, hostname=event["hostname"],
@@ -172,6 +192,40 @@ def handle_event(scan: Scan, event: dict) -> None:
                 location=event["location"],
             )
             _link_parameter(scan, param, is_new=p_created)
+
+
+    elif kind == "finding.found":
+        asset = Asset.objects.filter(
+            program=scan.program, hostname=event["hostname"],
+        ).first()
+        if not asset:
+            return  # asset desconhecido — ignora
+
+        endpoint = None
+        if event.get("url"):
+            endpoint = Endpoint.objects.filter(
+                asset=asset, url=event["url"],
+            ).first()
+
+        Finding.objects.update_or_create(
+            program=scan.program,
+            asset=asset,
+            template_id=event["template_id"],
+            url=event.get("url", ""),
+            defaults={
+                "endpoint": endpoint,
+                "title": (event.get("title") or "")[:255],
+                "severity": (event.get("severity") or "info").lower(),
+                "description": (event.get("description") or "")[:5000],
+                "tags": (event.get("tags") or "")[:500],
+                "cve": (event.get("cve") or "")[:500],
+                "cwe": (event.get("cwe") or "")[:500],
+                "reference": (event.get("reference") or "")[:1000],
+                "curl_command": (event.get("curl_command") or "")[:5000],
+                "matcher": (event.get("matcher") or "")[:200],
+                "extracted": (event.get("extracted") or "")[:500],
+            },
+        )
 
     elif kind == "scan.completed":
         s = event.get("summary", {})

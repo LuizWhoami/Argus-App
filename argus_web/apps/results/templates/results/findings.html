@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Findings — Argus{% endblock %}
+{% block breadcrumb_current %}Findings{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-4">
+  <div>
+    <h1 class="page-title">Findings</h1>
+    <div class="page-subtitle">{{ total }} achado(s) · verificação manual obrigatória</div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-2">
+    <div class="stat stat--critical">
+      <div class="stat__label">Critical</div>
+      <div class="stat__value">{{ by_sev.critical|default:0 }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-2">
+    <div class="stat stat--critical">
+      <div class="stat__label">High</div>
+      <div class="stat__value">{{ by_sev.high|default:0 }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-2">
+    <div class="stat stat--warning">
+      <div class="stat__label">Medium</div>
+      <div class="stat__value">{{ by_sev.medium|default:0 }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-2">
+    <div class="stat">
+      <div class="stat__label">Low</div>
+      <div class="stat__value">{{ by_sev.low|default:0 }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-2">
+    <div class="stat">
+      <div class="stat__label">Info</div>
+      <div class="stat__value">{{ by_sev.info|default:0 }}</div>
+    </div>
+  </div>
+</div>
+
+<form method="get" class="row g-2 mb-3 align-items-end">
+  <div class="col-md-2">
+    <label class="form-label">Programa</label>
+    <select name="program" class="form-select form-select-sm">
+      <option value="">— todos —</option>
+      {% for p in programs %}
+        <option value="{{ p.slug }}" {% if current_program_slug == p.slug %}selected{% endif %}>{{ p.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-2">
+    <label class="form-label">Severidade</label>
+    <select name="severity" class="form-select form-select-sm">
+      <option value="">— todas —</option>
+      {% for v, label in severity_choices %}
+        <option value="{{ v }}" {% if current_severity == v %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-2">
+    <label class="form-label">Verificação</label>
+    <select name="verification" class="form-select form-select-sm">
+      <option value="">— todas —</option>
+      {% for v, label in verification_choices %}
+        <option value="{{ v }}" {% if current_verification == v %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Buscar</label>
+    <input name="q" class="form-control form-control-sm" value="{{ q }}" placeholder="titulo, template, url">
+  </div>
+  <div class="col-md-2">
+    <button class="btn btn-sm btn-primary w-100">Filtrar</button>
+  </div>
+</form>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table m-0">
+      <thead>
+        <tr>
+          <th>Sev</th><th>Template</th><th>Titulo</th><th>Host</th><th>URL</th>
+          <th>Verificação</th><th style="width: 280px;">Ação</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in rows %}
+        <tr>
+          <td>
+            <span class="badge
+              {% if f.severity == "critical" or f.severity == "high" %}bg-danger
+              {% elif f.severity == "medium" %}bg-warning
+              {% elif f.severity == "low" %}bg-info
+              {% else %}bg-secondary{% endif %}">{{ f.severity }}</span>
+          </td>
+          <td><code class="mono text-small">{{ f.template_id }}</code></td>
+          <td>{{ f.title|truncatechars:60 }}</td>
+          <td><code class="mono text-small">{{ f.asset.hostname }}</code></td>
+          <td><code class="mono text-small">{{ f.url|truncatechars:60 }}</code></td>
+          <td>
+            <span class="badge
+              {% if f.verification == "verified" %}bg-success
+              {% elif f.verification == "false_positive" %}bg-danger
+              {% elif f.verification == "accepted_risk" %}bg-warning
+              {% else %}bg-secondary{% endif %}">{{ f.verification }}</span>
+          </td>
+          <td>
+            <form method="post" action="{% url 'results:finding_mark' f.pk %}" class="d-flex gap-1">
+              {% csrf_token %}
+              <select name="verification" class="form-select form-select-sm">
+                {% for v, label in verification_choices %}
+                  <option value="{{ v }}" {% if f.verification == v %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+              <button class="btn btn-sm btn-outline-primary">Salvar</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7" class="text-center text-muted py-4">
+              Nenhum finding ainda.<br>
+              <span class="text-small">Marque "Vulnerability scan" em um novo scan para rodar nuclei.</span>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

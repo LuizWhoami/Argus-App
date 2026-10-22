@@ -27,6 +27,22 @@
                  name="crawl" checked id="crawl">
           <label class="form-check-label" for="crawl">Crawling (katana)</label>
         </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox"
+                 name="vuln_scan" id="vuln_scan">
+          <label class="form-check-label" for="vuln_scan">
+            Vulnerability scan (nuclei)
+            <span class="text-muted text-small">— templates passivos apenas</span>
+          </label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox"
+                 name="dir_scan" id="dir_scan">
+          <label class="form-check-label" for="dir_scan">
+            Directory discovery (dirsearch)
+            <span class="text-muted text-small">— recursivo (-r)</span>
+          </label>
+        </div>
       </div>
       <div class="mb-3">
         <label class="form-label">Wordlist de API</label>
@@ -41,6 +57,22 @@
         <small class="text-muted">
           A wordlist so e usada se "API discovery" estiver marcado.
         </small>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Wordlist de diretorios</label>
+        <select name="dir_wordlist" class="form-select">
+          <option value="">— sem wordlist —</option>
+          {% for w in dir_wordlists %}
+            <option value="{{ w.pk }}">{{ w.name }}{% if w.is_builtin %} (embutida){% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Dirsearch depth</label>
+        <input name="dir_depth" type="number" min="1" max="5"
+               value="2" class="form-control" style="width: 8rem;">
       </div>
 
       <div class="mb-3">

@@ -38,6 +38,14 @@ class Scan(models.Model):
         related_name="scans",
     )
     api_scan = models.BooleanField(default=True)
+    dir_scan = models.BooleanField(default=False)  # content discovery opt-in
+    dir_depth = models.PositiveSmallIntegerField(default=2)
+    dir_wordlist = models.ForeignKey(
+        "wordlists.Wordlist",
+        on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="dir_scans",
+    )
+    vuln_scan = models.BooleanField(default=False)  # opt-in por seguranca
     crawl = models.BooleanField(default=True)
     crawl_depth = models.PositiveSmallIntegerField(default=3)
 

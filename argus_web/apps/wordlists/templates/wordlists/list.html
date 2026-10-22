@@ -3,9 +3,12 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-  <h1 class="h3 m-0">Wordlists</h1>
+  <div>
+    <h1 class="page-title">Wordlists</h1>
+    <div class="page-subtitle">Listas de paths, params e UAs</div>
+  </div>
   <a class="btn btn-primary" href="{% url 'wordlists:new' %}">
-    Nova wordlist
+    <i class="bi bi-upload"></i> Importar .txt
   </a>
 </div>
 

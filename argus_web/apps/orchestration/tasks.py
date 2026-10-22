@@ -42,6 +42,10 @@ def execute_scan(scan_id: int) -> dict:
         if scan.wordlist_id:
             wl_lines = scan.wordlist.load_lines()
 
+        dir_wl_lines = None
+        if scan.dir_wordlist_id:
+            dir_wl_lines = scan.dir_wordlist.load_lines()
+
         for event in iter_scan_events(
             target=scan.target,
             scope=scope,
@@ -50,6 +54,10 @@ def execute_scan(scan_id: int) -> dict:
             crawl=scan.crawl,
             crawl_depth=scan.crawl_depth,
             wordlist_lines=wl_lines,
+            vuln_scan=scan.vuln_scan,
+            dir_scan=scan.dir_scan,
+            dir_wordlist_lines=dir_wl_lines,
+            dir_depth=scan.dir_depth,
         ):
             # cancelamento cooperativo
             current = Scan.objects.filter(pk=scan_id).values("status").first()

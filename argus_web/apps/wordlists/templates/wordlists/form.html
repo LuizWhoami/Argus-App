@@ -1,66 +1,147 @@
 {% extends "base.html" %}
-{% block title %}{% if obj %}Editar{% else %}Nova{% endif %} wordlist{% endblock %}
+{% block title %}{% if obj %}Editar{% else %}Importar{% endif %} wordlist{% endblock %}
+{% block breadcrumb_current %}{% if obj %}Editar{% else %}Importar{% endif %}{% endblock %}
 
 {% block content %}
-<h1 class="h3 mb-4">
-  {% if obj %}Editar "{{ obj.name }}"{% else %}Nova wordlist{% endif %}
-</h1>
-
-<form method="post" enctype="multipart/form-data" class="row g-3">
-  {% csrf_token %}
-
-  <div class="col-md-8">
-    <label class="form-label">Nome</label>
-    <input name="name" class="form-control" required
-           value="{{ obj.name|default:'' }}"
-           placeholder="ex: paths-api-v2">
-  </div>
-
-  <div class="col-md-4">
-    <label class="form-label">Tipo</label>
-    {% if obj %}
-      <input class="form-control" value="{{ obj.kind }}" disabled>
-      <input type="hidden" name="kind" value="{{ obj.kind }}">
-    {% else %}
-      <select name="kind" class="form-select" required>
-        {% for v, label in kinds %}
-          <option value="{{ v }}">{{ label }}</option>
-        {% endfor %}
-      </select>
-    {% endif %}
-  </div>
-
-  <div class="col-12">
-    <label class="form-label">Descricao (opcional)</label>
-    <input name="description" class="form-control"
-           value="{{ obj.description|default:'' }}">
-  </div>
-
-  <div class="col-md-6">
-    <label class="form-label">Conteudo (1 por linha)</label>
-    <textarea name="content" rows="10" class="form-control"
-              placeholder="/api/v1&#10;/api/v2&#10;/graphql">{{ obj.content|default:'' }}</textarea>
-  </div>
-
-  <div class="col-md-6">
-    <label class="form-label">Ou upload de .txt</label>
-    <input type="file" name="file" accept=".txt" class="form-control">
-    {% if obj and obj.file %}
-      <div class="small text-muted mt-1">
-        Arquivo atual: <code>{{ obj.file.name }}</code>
-      </div>
-    {% endif %}
-    <div class="small text-muted mt-1">
-      Se ambos forem enviados, o conteudo direto tem prioridade.
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <h1 class="page-title">
+      {% if obj %}Editar "{{ obj.name }}"{% else %}Importar / Criar wordlist{% endif %}
+    </h1>
+    <div class="page-subtitle">
+      Suba um arquivo .txt ou cole o conteudo diretamente
     </div>
-  </div>
 
-  <div class="col-12">
-    <button class="btn btn-primary">
-      {% if obj %}Salvar{% else %}Criar{% endif %}
-    </button>
-    <a class="btn btn-outline-secondary"
-       href="{% url 'wordlists:list' %}">Cancelar</a>
+    <form method="post" enctype="multipart/form-data" class="mt-4">
+      {% csrf_token %}
+
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label">Nome</label>
+              <input name="name" class="form-control" required
+                     value="{{ obj.name|default:'' }}"
+                     placeholder="ex: paths-api-acme">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Tipo</label>
+              {% if obj %}
+                <input class="form-control" value="{{ obj.kind }}" disabled>
+                <input type="hidden" name="kind" value="{{ obj.kind }}">
+              {% else %}
+                <select name="kind" class="form-select" required>
+                  {% for v, label in kinds %}
+                    <option value="{{ v }}">{{ label }}</option>
+                  {% endfor %}
+                </select>
+              {% endif %}
+            </div>
+            <div class="col-12">
+              <label class="form-label">Descricao (opcional)</label>
+              <input name="description" class="form-control"
+                     value="{{ obj.description|default:'' }}"
+                     placeholder="ex: extraida do alvo X">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-header">
+              <span><i class="bi bi-upload"></i> Upload de arquivo</span>
+            </div>
+            <div class="card-body">
+              <input type="file" name="file" accept=".txt"
+                     class="form-control mb-2">
+              <div id="file-info" class="text-success text-small mb-2"></div>
+              <div class="text-muted text-small">
+                1 item por linha. Linhas em branco e comentarios (#) sao ignorados.
+                {% if obj and obj.file %}
+                  <br>Arquivo atual: <code>{{ obj.file.name }}</code>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-header">
+              <span><i class="bi bi-keyboard"></i> Ou cole o conteudo</span>
+            </div>
+            <div class="card-body">
+              <textarea name="content" rows="6" class="form-control"
+                        placeholder="/api/v1&#10;/api/v2&#10;/graphql">{{ obj.content|default:'' }}</textarea>
+              <div class="text-muted text-small mt-2">
+                Se ambos forem preenchidos, o conteudo colado tem prioridade.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button class="btn btn-primary">
+          <i class="bi bi-check-lg"></i>
+          {% if obj %}Salvar{% else %}Importar{% endif %}
+        </button>
+        <a class="btn btn-outline-secondary" href="{% url 'wordlists:list' %}">
+          Cancelar
+        </a>
+      </div>
+    </form>
   </div>
-</form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  var input = document.querySelector('input[type=file]');
+  var card  = input.closest('.card-body');
+  if (!input || !card) return;
+
+  card.addEventListener('dragover', function (e) {
+    e.preventDefault();
+    card.style.borderColor = 'var(--argus-green)';
+    card.style.background = 'rgba(57,255,20,0.05)';
+  });
+  card.addEventListener('dragleave', function (e) {
+    e.preventDefault();
+    card.style.borderColor = '';
+    card.style.background = '';
+  });
+  card.addEventListener('drop', function (e) {
+    e.preventDefault();
+    card.style.borderColor = '';
+    card.style.background = '';
+    if (e.dataTransfer.files.length > 0) {
+      input.files = e.dataTransfer.files;
+      // trigger change
+      var ev = new Event('change', {bubbles: true});
+      input.dispatchEvent(ev);
+    }
+  });
+
+  // Preview do count de linhas ao escolher arquivo
+  input.addEventListener('change', function () {
+    var f = input.files[0];
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function (ev) {
+      var lines = ev.target.result.split(/\r?\n/)
+        .map(function (l) { return l.trim(); })
+        .filter(function (l) { return l && l.charAt(0) !== '#'; });
+      var info = document.getElementById('file-info');
+      if (info) {
+        info.textContent = f.name + ' — ' + lines.length + ' linhas uteis';
+      }
+    };
+    reader.readAsText(f);
+  });
+})();
+</script>
 {% endblock %}

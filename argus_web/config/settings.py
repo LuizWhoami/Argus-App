@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "apps.orchestration",
     "apps.results",
     "apps.wordlists",
+    "apps.findings",
 ]
 
 MIDDLEWARE = [
@@ -99,6 +100,10 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+# Media (uploads)
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
 STATICFILES_DIRS = [BASE_DIR / "static"]
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

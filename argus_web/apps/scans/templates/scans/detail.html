@@ -113,6 +113,13 @@
       <span class="badge bg-secondary">{{ params|length }}</span>
     </button>
   </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" data-bs-toggle="tab"
+            data-bs-target="#tab-findings" type="button" role="tab">
+      <i class="bi bi-shield-exclamation"></i> Findings
+      <span class="badge bg-secondary">{{ findings|length }}</span>
+    </button>
+  </li>
 </ul>
 
 <div class="tab-content border border-top-0 rounded-bottom p-3">
@@ -242,6 +249,46 @@
     {% else %}
       <div class="text-muted text-small py-3 text-center">
         Nenhum parametro descoberto.
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="tab-pane fade" id="tab-findings" role="tabpanel">
+    {% if findings %}
+      <div class="table-responsive">
+        <table class="table table-sm m-0">
+          <thead>
+            <tr><th>Severidade</th><th>Template</th><th>Titulo</th><th>URL</th><th>Verificacao</th></tr>
+          </thead>
+          <tbody>
+          {% for f in findings %}
+            <tr>
+              <td>
+                <span class="badge
+                  {% if f.severity == "critical" %}bg-danger
+                  {% elif f.severity == "high" %}bg-danger
+                  {% elif f.severity == "medium" %}bg-warning
+                  {% elif f.severity == "low" %}bg-info
+                  {% else %}bg-secondary{% endif %}">{{ f.severity }}</span>
+              </td>
+              <td><code class="mono text-small">{{ f.template_id }}</code></td>
+              <td>{{ f.title|truncatechars:60 }}</td>
+              <td><code class="mono text-small">{{ f.url|truncatechars:60 }}</code></td>
+              <td>
+                <span class="badge
+                  {% if f.verification == "verified" %}bg-success
+                  {% elif f.verification == "false_positive" %}bg-danger
+                  {% elif f.verification == "accepted_risk" %}bg-warning
+                  {% else %}bg-secondary{% endif %}">{{ f.verification }}</span>
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="text-muted text-small py-3 text-center">
+        Nenhum finding{% if not scan.vuln_scan %} (vuln_scan desativado neste scan){% endif %}.
       </div>
     {% endif %}
   </div>

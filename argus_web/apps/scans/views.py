@@ -3,7 +3,10 @@ from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
+from django.utils import timezone
 
+from apps.wordlists.models import Wordlist
+from apps.findings.models import Finding
 from apps.assets.models import Asset, Endpoint, Parameter
 from apps.programs.models import Program
 from apps.orchestration.services import cancel_scan, enqueue_scan
@@ -22,26 +25,35 @@ def list_scans(request):
 
 @login_required
 def new_scan(request, slug):
+    from django.db import models
+    from apps.wordlists.models import Wordlist
+
     program = get_object_or_404(Program, slug=slug, owner=request.user)
+
     if request.method == "POST":
         target = (request.POST.get("target") or "").strip().lower()
         if not target:
             return HttpResponseBadRequest("target obrigatorio")
 
-        # valida escopo na criacao
         from argus_agent.scope import Scope
         scope = Scope(program.allowed_patterns(), program.excluded_patterns())
         if not scope.is_allowed(target):
             messages.error(request, f"'{target}' fora do escopo do programa.")
             return redirect("scans:new", slug=program.slug)
 
-        from apps.wordlists.models import Wordlist
+        # Wordlist de API
         wl = None
         wl_id = request.POST.get("wordlist") or ""
         if wl_id:
-            wl = Wordlist.objects.filter(
-                pk=wl_id,
-            ).filter(
+            wl = Wordlist.objects.filter(pk=wl_id).filter(
+                models.Q(is_builtin=True) | models.Q(owner=request.user)
+            ).first()
+
+        # Wordlist de diretorios
+        dir_wl = None
+        dir_wl_id = request.POST.get("dir_wordlist") or ""
+        if dir_wl_id:
+            dir_wl = Wordlist.objects.filter(pk=dir_wl_id).filter(
                 models.Q(is_builtin=True) | models.Q(owner=request.user)
             ).first()
 
@@ -51,25 +63,35 @@ def new_scan(request, slug):
             requested_by=request.user,
             api_scan=("api_scan" in request.POST),
             crawl=("crawl" in request.POST),
-            crawl_depth=int(request.POST.get("crawl_depth") or 3),
+            crawl_depth=max(1, min(10, int(request.POST.get("crawl_depth") or 3))),
             wordlist=wl,
+            vuln_scan=("vuln_scan" in request.POST),
+            dir_scan=("dir_scan" in request.POST),
+            dir_wordlist=dir_wl,
+            dir_depth=max(1, min(5, int(request.POST.get("dir_depth") or 2))),
         )
         enqueue_scan(scan)
         return redirect("scans:detail", pk=scan.pk)
 
-    from django.db.models import Q
-    from apps.wordlists.models import Wordlist
+    # GET
     wordlists = Wordlist.objects.filter(
-        Q(is_builtin=True) | Q(owner=request.user),
+        models.Q(is_builtin=True) | models.Q(owner=request.user),
         kind=Wordlist.KIND_API,
     ).order_by("-is_builtin", "name")
 
+    dir_wordlists = Wordlist.objects.filter(
+        models.Q(is_builtin=True) | models.Q(owner=request.user),
+        kind=Wordlist.KIND_CONTENT,
+    ).order_by("-is_builtin", "name")
+
     return render(request, "scans/new.html", {
-        "program": program, "wordlists": wordlists,
+        "program": program,
+        "wordlists": wordlists,
+        "dir_wordlists": dir_wordlists,
     })
 
 
-@login_required
+
 def detail_scan(request, pk):
     scan = get_object_or_404(
         Scan, pk=pk, program__owner=request.user)
@@ -127,11 +149,19 @@ def detail_scan(request, pk):
                   .select_related("endpoint")
                   .order_by("location", "name"))
 
+    findings = (Finding.objects
+                .filter(program=scan.program,
+                        first_seen__gte=scan.started_at or scan.created_at,
+                        first_seen__lte=scan.finished_at or timezone.now())
+                .select_related("asset", "endpoint")
+                .order_by("-severity", "-last_seen")) if scan.started_at else Finding.objects.none()
+
     return render(request, "scans/detail.html", {
         "scan": scan, "stages": stages, "events": events,
         "review": review,
         "assets": assets, "endpoints": endpoints,
         "apis": apis, "params": params,
+        "findings": findings,
     })
 
 

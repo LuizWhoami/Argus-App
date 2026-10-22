@@ -55,7 +55,20 @@ def dashboard(request):
             asset__program__owner=request.user).exclude(kind="").count(),
         "params": Parameter.objects.filter(
             endpoint__asset__program__owner=request.user).count(),
+        "findings": 0,
+        "findings_verified": 0,
     }
+
+    # Findings (import tardio para nao quebrar em DB sem tabela)
+    try:
+        from apps.findings.models import Finding
+        stats["findings"] = Finding.objects.filter(
+            program__owner=request.user).count()
+        stats["findings_verified"] = Finding.objects.filter(
+            program__owner=request.user,
+            verification=Finding.VERIF_VERIFIED).count()
+    except Exception:
+        pass
     verified_assets = Asset.objects.filter(
         program__owner=request.user,
         verification=Asset.VERIF_VERIFIED,
@@ -345,3 +358,69 @@ def api_recon(request):
         "q": q,
         "verification_choices": Endpoint.VERIF_CHOICES,
     })
+
+
+@login_required
+def list_findings(request):
+    from apps.findings.models import Finding
+
+    qs = (Finding.objects
+          .filter(program__owner=request.user)
+          .select_related("program", "asset", "endpoint")
+          .order_by("-last_seen"))
+
+    prog_slug = request.GET.get("program", "").strip()
+    if prog_slug:
+        qs = qs.filter(program__slug=prog_slug)
+
+    sev = request.GET.get("severity", "").strip()
+    if sev:
+        qs = qs.filter(severity=sev)
+
+    verif = request.GET.get("verification", "").strip()
+    if verif:
+        qs = qs.filter(verification=verif)
+
+    q = request.GET.get("q", "").strip()
+    if q:
+        qs = qs.filter(Q(title__icontains=q) | Q(template_id__icontains=q)
+                       | Q(url__icontains=q))
+
+    from django.db.models import Count
+    by_sev = dict(qs.values_list("severity").annotate(Count("id")))
+
+    return render(request, "results/findings.html", {
+        "rows": qs[:500],
+        "total": qs.count(),
+        "by_sev": by_sev,
+        "programs": _programs_of(request.user),
+        "current_program_slug": prog_slug,
+        "current_severity": sev,
+        "current_verification": verif,
+        "q": q,
+        "severity_choices": Finding.SEV_CHOICES,
+        "verification_choices": Finding.VERIF_CHOICES,
+    })
+
+
+@login_required
+@require_POST
+def mark_finding(request, pk):
+    from apps.findings.models import Finding
+
+    finding = get_object_or_404(Finding, pk=pk, program__owner=request.user)
+    new_status = request.POST.get("verification", "").strip()
+
+    if new_status not in dict(Finding.VERIF_CHOICES):
+        messages.error(request, "status invalido")
+        return redirect("results:findings")
+
+    finding.verification = new_status
+    finding.verification_note = request.POST.get("note", "").strip()[:2000]
+    finding.verified_by = request.user
+    finding.verified_at = timezone.now()
+    finding.save(update_fields=[
+        "verification", "verification_note", "verified_by", "verified_at",
+    ])
+    messages.success(request, f"Finding marcado como '{new_status}'.")
+    return redirect(request.META.get("HTTP_REFERER", "results:findings"))
