@@ -11,7 +11,6 @@
 > *Argus Panoptes — o gigante de cem olhos que nunca dormia.*
 > Vê tudo, mas só relata o que foi autorizado a ver.
 ---
----
 
 ## ⚠️ Aviso legal
 
