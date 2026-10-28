@@ -1,4 +1,4 @@
-# Argus
+# Argus App
  
 > Agente autônomo de Bug Bounty — recon, API discovery, crawling e parameter extraction.
 > Uso **exclusivo** em programas de Bug Bounty e ativos explicitamente autorizados.
