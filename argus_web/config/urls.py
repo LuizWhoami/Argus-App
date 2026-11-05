@@ -25,6 +25,7 @@ urlpatterns = [
     path("scans/", include("apps.scans.urls")),
     path("results/", include("apps.results.urls")),
     path("wordlists/", include("apps.wordlists.urls")),
+    path("repeater/", include("apps.repeater.urls")),
 ]
 
 if settings.DEBUG:

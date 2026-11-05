@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     "apps.results",
     "apps.wordlists",
     "apps.findings",
+    "apps.repeater",
 ]
 
 MIDDLEWARE = [

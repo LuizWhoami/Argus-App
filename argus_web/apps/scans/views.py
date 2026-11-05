@@ -69,6 +69,7 @@ def new_scan(request, slug):
             dir_scan=("dir_scan" in request.POST),
             dir_wordlist=dir_wl,
             dir_depth=max(1, min(5, int(request.POST.get("dir_depth") or 2))),
+            dir_recursive=("dir_recursive" in request.POST),
         )
         enqueue_scan(scan)
         return redirect("scans:detail", pk=scan.pk)

@@ -58,6 +58,7 @@ def execute_scan(scan_id: int) -> dict:
             dir_scan=scan.dir_scan,
             dir_wordlist_lines=dir_wl_lines,
             dir_depth=scan.dir_depth,
+            dir_recursive=scan.dir_recursive,
         ):
             # cancelamento cooperativo
             current = Scan.objects.filter(pk=scan_id).values("status").first()

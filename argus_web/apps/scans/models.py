@@ -40,6 +40,7 @@ class Scan(models.Model):
     api_scan = models.BooleanField(default=True)
     dir_scan = models.BooleanField(default=False)  # content discovery opt-in
     dir_depth = models.PositiveSmallIntegerField(default=2)
+    dir_recursive = models.BooleanField(default=False)  # -r no dirsearch
     dir_wordlist = models.ForeignKey(
         "wordlists.Wordlist",
         on_delete=models.SET_NULL, null=True, blank=True,

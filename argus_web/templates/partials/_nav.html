@@ -31,6 +31,9 @@
      href="{% url 'results:api_recon' %}">
     <i class="bi bi-braces"></i><span>API Recon</span>
   </a>
+  <a class="argus-nav__link" href="/repeater/">
+    <i class="bi bi-arrow-repeat"></i><span>Repeater</span>
+  </a>
   <a class="argus-nav__link {% if request.resolver_match.url_name == 'params' %}active{% endif %}"
      href="{% url 'results:params' %}">
     <i class="bi bi-sliders"></i><span>Parameters</span>
