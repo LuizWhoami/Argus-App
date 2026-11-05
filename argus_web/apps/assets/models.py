@@ -138,6 +138,8 @@ class Endpoint(VerificationMixin):
                               default=SOURCE_SEED)
     kind = models.CharField(max_length=20, choices=KIND_CHOICES,
                             blank=True)
+    is_directory = models.BooleanField(default=False, db_index=True)
+    response_size = models.IntegerField(null=True, blank=True)
     discovered_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -86,6 +86,8 @@
           <tr><th>URL</th><th>Status</th><th>Content-Type</th><th>Title</th><th>Tech</th></tr>
         {% elif kind_of_rows == "endpoints" %}
           <tr><th>URL</th><th>Method</th><th>Status</th><th>Kind</th><th>Source</th></tr>
+        {% elif kind_of_rows == "directories" %}
+          <tr><th>Status</th><th>URL</th><th>Tamanho</th><th>Source</th><th>Verificacao</th></tr>
         {% elif kind_of_rows == "params" %}
           <tr><th>Param</th><th>Local</th><th>Endpoint</th><th>Verificacao</th></tr>
         {% endif %}
@@ -126,6 +128,24 @@
             <td>{% if r.kind %}<span class="badge bg-info">{{ r.kind }}</span>{% else %}—{% endif %}</td>
             <td class="small text-muted">{{ r.source }}</td>
 
+          {% elif kind_of_rows == "directories" %}
+            <td>
+              <span class="badge
+                {% if r.status_code == 200 %}bg-success
+                {% elif r.status_code == 403 %}bg-warning
+                {% elif r.status_code == 401 %}bg-warning
+                {% else %}bg-secondary{% endif %}">{{ r.status_code|default:"—" }}</span>
+            </td>
+            <td><code class="mono small">{{ r.url|truncatechars:90 }}</code></td>
+            <td class="small text-muted">{{ r.response_size|default:"—" }}</td>
+            <td class="small text-muted">{{ r.source }}</td>
+            <td>
+              <span class="badge
+                {% if r.verification == "verified" %}bg-success
+                {% elif r.verification == "interesting" %}bg-primary
+                {% elif r.verification == "false_positive" %}bg-danger
+                {% else %}bg-secondary{% endif %}">{{ r.verification }}</span>
+            </td>
           {% elif kind_of_rows == "params" %}
             <td><code class="mono">{{ r.name }}</code></td>
             <td><span class="badge bg-secondary">{{ r.location }}</span></td>

@@ -1,4 +1,4 @@
-#!/home/luiz/Desktop/PC/projects/Argus-App/venv/bin/python3
+#!/home/luiz/Desktop/PC/projects/Argus-App/venv/bin/python3.12
 import sys
 from _pytest.config import _console_main
 if __name__ == '__main__':

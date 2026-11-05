@@ -5,26 +5,15 @@ com os eventos:
   - CLI: imprime com Rich e grava em SQLAlchemy
   - Django: grava nos models e transmite pra UI
 
-Eventos emitidos:
-  scan.started    {target}
-  stage.started   {stage, order}
-  stage.completed {stage, count}
-  stage.failed    {stage, error}
-  asset.found     {hostname, ip}
-  dns.record      {hostname, record_type, value}
-  http.probe      {hostname, url, status_code, content_type, title,
-                   webserver, tech, location}
-  endpoint.found  {hostname, url, method, status_code, content_type, source}
-  api.found       {hostname, url, kind, source}
-  param.found     {endpoint_url, name, location}
-  scan.completed  {summary}
-  scan.failed     {error}
+Etapas:
+  scope → subdomains → dns → http → directories → crawl → api → vulns → params
 """
 from typing import Generator, Optional
 from urllib.parse import urlparse
 
 from .adapters import (
     SubfinderAdapter, DnsxAdapter, HttpxAdapter, KatanaAdapter,
+    NucleiAdapter, DirsearchAdapter,
 )
 from .discovery import (
     classify_api_endpoint, extract_query_params, extract_form_params,
@@ -41,9 +30,11 @@ STAGE_ORDER = {
     "subdomains": 2,
     "dns": 3,
     "http": 4,
-    "crawl": 5,
-    "api": 6,
-    "params": 7,
+    "directories": 5,
+    "crawl": 6,
+    "api": 7,
+    "vulns": 8,
+    "params": 9,
 }
 
 
@@ -65,6 +56,11 @@ def iter_scan_events(
     wordlist: Optional[str] = None,
     wordlist_lines: Optional[list] = None,
     form_fetch_limit: int = 40,
+    vuln_scan: bool = False,
+    vuln_tags: Optional[str] = None,
+    dir_scan: bool = False,
+    dir_wordlist_lines: Optional[list] = None,
+    dir_depth: int = 2,
 ) -> Generator[Event, None, None]:
     """Gera eventos do scan. Nao escreve no banco, nao imprime."""
 
@@ -100,7 +96,8 @@ def iter_scan_events(
         yield {"event": "scan.completed",
                "summary": {"subdomains": 0, "resolved": 0,
                            "alive": 0, "crawled": 0,
-                           "api": 0, "params": 0}}
+                           "directories": 0, "api": 0, "vulns": 0,
+                           "params": 0}}
         return
 
     # ---- 3. dns ----
@@ -128,17 +125,20 @@ def iter_scan_events(
            "count": len(resolved)}
 
     # ---- 4. http ----
+    # httpx por host individual: se 1 falhar, os outros continuam
     yield {"event": "stage.started", "stage": "http",
            "order": STAGE_ORDER["http"]}
     http_results = []
-    if resolved:
+    for host in sorted(resolved):
         try:
-            http_results = HttpxAdapter().execute(
-                input_data="\n".join(sorted(resolved)),
+            results = HttpxAdapter().execute(
+                input_data=host,
                 rate_limit=max_rps,
             )
+            http_results.extend(results)
         except Exception as e:
-            yield {"event": "stage.failed", "stage": "http", "error": str(e)}
+            yield {"event": "stage.info", "stage": "http",
+                   "message": f"{host}: {str(e)[:100]}"}
 
     live_urls = []
     for res in http_results:
@@ -162,10 +162,66 @@ def iter_scan_events(
         }
         if res.get("url"):
             live_urls.append(res["url"])
+
+    # Fallback: httpx vazio mas DNS resolveu
+    if not live_urls and resolved:
+        for host in sorted(resolved):
+            live_urls.append(f"https://{host}")
+            live_urls.append(f"http://{host}")
+        yield {"event": "stage.info", "stage": "http",
+               "message": f"httpx vazio; fallback gerou {len(live_urls)} URLs sinteticas"}
+
     yield {"event": "stage.completed", "stage": "http",
            "count": len(live_urls)}
 
-    # ---- 5. crawl ----
+    # ---- 5. directories ----
+    dir_count = 0
+    if dir_scan and live_urls:
+        yield {"event": "stage.started", "stage": "directories",
+               "order": STAGE_ORDER["directories"]}
+
+        # Se nao tem wordlist, usa a default do dirsearch
+        wl_input = None
+        if dir_wordlist_lines:
+            wl_input = "\n".join(dir_wordlist_lines)
+
+        for url in live_urls[:20]:
+            try:
+                results = DirsearchAdapter().execute(
+                    target=url,
+                    input_data=wl_input,
+                    recursion_depth=dir_depth,
+                    threads=min(max_rps, 15),
+                )
+            except Exception as e:
+                yield {"event": "stage.info", "stage": "directories",
+                       "message": f"{url}: {str(e)[:100]}"}
+                continue
+
+            for res in results:
+                found_url = res.get("url") or ""
+                host = _host_of(found_url)
+                if not host or not scope.is_allowed(host):
+                    continue
+                dir_count += 1
+                yield {
+                    "event": "directory.found",
+                    "hostname": host,
+                    "url": found_url,
+                    "status_code": res.get("status") or res.get("status_code"),
+                    "content_length": (res.get("contentLength")
+                                       or res.get("content-length")
+                                       or res.get("length")),
+                    "content_type": (res.get("contentType")
+                                     or res.get("content_type")),
+                    "redirect": res.get("redirect") or "",
+                    "source": "dirsearch",
+                }
+
+        yield {"event": "stage.completed", "stage": "directories",
+               "count": dir_count}
+
+    # ---- 6. crawl ----
     crawled_urls = set()
     if crawl and live_urls:
         yield {"event": "stage.started", "stage": "crawl",
@@ -177,7 +233,8 @@ def iter_scan_events(
                 rate_limit=max_rps,
             )
         except Exception as e:
-            yield {"event": "stage.failed", "stage": "crawl", "error": str(e)}
+            yield {"event": "stage.failed", "stage": "crawl",
+                   "error": str(e)}
             katana_results = []
 
         for res in katana_results:
@@ -202,9 +259,8 @@ def iter_scan_events(
         yield {"event": "stage.completed", "stage": "crawl",
                "count": len(crawled_urls)}
 
-    # ---- 6. api ----
+    # ---- 7. api ----
     api_hits = set()
-    param_count = 0
     if api_scan:
         yield {"event": "stage.started", "stage": "api",
                "order": STAGE_ORDER["api"]}
@@ -222,16 +278,18 @@ def iter_scan_events(
                 api_paths = load_api_paths(wordlist)
             except Exception:
                 api_paths = []
+
         if live_urls and api_paths:
+            api_targets = live_urls[:5]
             try:
                 api_results = HttpxAdapter().execute(
-                    input_data="\n".join(live_urls),
+                    input_data="\n".join(api_targets),
                     paths=api_paths,
                     rate_limit=max_rps,
                 )
             except Exception as e:
-                yield {"event": "stage.failed", "stage": "api",
-                       "error": str(e)}
+                yield {"event": "stage.info", "stage": "api",
+                       "message": f"httpx api falhou: {str(e)[:100]}"}
                 api_results = []
 
             for res in api_results:
@@ -247,7 +305,55 @@ def iter_scan_events(
         yield {"event": "stage.completed", "stage": "api",
                "count": len(api_hits)}
 
-        # ---- 7. params ----
+    # ---- 8. vulns ----
+    finding_count = 0
+    if vuln_scan and live_urls:
+        yield {"event": "stage.started", "stage": "vulns",
+               "order": STAGE_ORDER["vulns"]}
+        try:
+            nuclei_results = NucleiAdapter().execute(
+                input_data="\n".join(live_urls[:5]),
+                tags=vuln_tags,
+                rate_limit=max_rps,
+            )
+        except Exception as e:
+            yield {"event": "stage.failed", "stage": "vulns",
+                   "error": str(e)}
+            nuclei_results = []
+
+        for res in nuclei_results:
+            info = res.get("info", {}) or {}
+            classification = info.get("classification", {}) or {}
+            sev = (info.get("severity") or "info").lower()
+            tid = res.get("template-id") or res.get("templateID") or "unknown"
+            matched = res.get("matched-at") or res.get("host") or ""
+            host = _host_of(matched)
+            if not host or not scope.is_allowed(host):
+                continue
+            finding_count += 1
+            yield {
+                "event": "finding.found",
+                "hostname": host,
+                "url": matched,
+                "title": (info.get("name") or tid)[:255],
+                "template_id": tid,
+                "severity": sev,
+                "description": (info.get("description") or "")[:2000],
+                "tags": ",".join(info.get("tags", []) or [])[:500],
+                "cve": ",".join(classification.get("cve-id", []) or [])[:500],
+                "cwe": ",".join(classification.get("cwe-id", []) or [])[:500],
+                "reference": ",".join(info.get("reference", []) or [])[:1000],
+                "curl_command": (res.get("curl-command") or "")[:2000],
+                "matcher": (res.get("matcher-name") or "")[:200],
+                "extracted": ",".join(res.get("extracted-results", []) or [])[:500],
+                "source": "nuclei",
+            }
+        yield {"event": "stage.completed", "stage": "vulns",
+               "count": finding_count}
+
+    # ---- 9. params ----
+    param_count = 0
+    if api_scan:
         yield {"event": "stage.started", "stage": "params",
                "order": STAGE_ORDER["params"]}
         seen = set()
@@ -287,6 +393,8 @@ def iter_scan_events(
         "resolved": len(resolved),
         "alive": len(live_urls),
         "crawled": len(crawled_urls),
+        "directories": dir_count,
         "api": len(api_hits),
+        "vulns": finding_count,
         "params": param_count,
     }}
